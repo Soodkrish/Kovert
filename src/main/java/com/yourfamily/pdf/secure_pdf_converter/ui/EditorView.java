@@ -56,6 +56,7 @@ public class EditorView extends BorderPane {
     public EditorView(File file, boolean redactionMode, MainWindow app) {
 
         this.app = app;
+        loadStylesheet();
 
         SplitPane mainSplit = new SplitPane();
 
@@ -155,6 +156,17 @@ public class EditorView extends BorderPane {
         setCenter(mainSplit);
         
         
+    }
+
+    private void loadStylesheet() {
+
+        try {
+            getStylesheets().add(
+                    Objects.requireNonNull(getClass().getResource("/style.css"))
+                            .toExternalForm());
+        } catch (Exception e) {
+            System.err.println("style.css not found for EditorView.");
+        }
     }
 
     /* ================= WORD PANEL ================= */

@@ -183,3 +183,35 @@
     -fx-font-weight: 900;
     -fx-text-fill: linear-gradient(to right, #ffffff, #ff8700);
 }
+
+.conversion-guide-trigger {
+    -fx-background-color: linear-gradient(to bottom, rgba(40, 46, 51, 0.95), rgba(24, 28, 33, 0.95));
+    -fx-border-color: #4c535d;
+    -fx-border-radius: 999px;
+    -fx-background-radius: 999px;
+    -fx-padding: 8px 18px;
+    -fx-text-fill: #f3f6f8;
+    -fx-font-weight: 700;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.45), 14, 0, 0, 5);
+}
+
+.conversion-guide-trigger:hover {
+    -fx-border-color: #ff8700;
+    -fx-text-fill: #ffb869;
+}
+
+.conversion-guide-popup {
+    -fx-background-color: linear-gradient(to bottom right, rgba(16, 20, 25, 0.98), rgba(22, 27, 34, 0.98));
+    -fx-border-color: rgba(255, 135, 0, 0.55);
+    -fx-border-radius: 16px;
+    -fx-background-radius: 16px;
+    -fx-padding: 16px 18px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.65), 28, 0, 0, 12);
+}
+
+.conversion-guide-item {
+    -fx-text-fill: #dce4eb;
+    -fx-font-family: "Consolas";
+    -fx-font-size: 13px;
+}
