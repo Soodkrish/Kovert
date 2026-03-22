@@ -1,0 +1,40 @@
+.root {
+    -fx-background-color: linear-gradient(to bottom right, #0f0f0f, #151922);
+    -fx-font-family: "Segoe UI";
+}
+
+.top-bar {
+    -fx-background-color: rgba(25, 25, 25, 0.85);
+    -fx-padding: 12;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.7), 20, 0.3, 0, 4);
+}
+
+.button {
+    -fx-background-color: #262626;
+    -fx-text-fill: #dddddd;
+    -fx-background-radius: 8;
+    -fx-padding: 6 14 6 14;
+}
+
+.button:hover {
+    -fx-background-color: #333333;
+    -fx-effect: dropshadow(gaussian, #00ffaa, 12, 0.5, 0, 0);
+}
+
+.metrics-panel {
+    -fx-background-color: rgba(32,32,32,0.92);
+    -fx-background-radius: 16;
+    -fx-padding: 20;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.8), 25, 0.4, 0, 8);
+}
+
+.redact-button {
+    -fx-background-color: #ff2e63;
+    -fx-text-fill: white;
+    -fx-background-radius: 12;
+}
+
+.redact-button:hover {
+    -fx-background-color: #ff4f7a;
+    -fx-effect: dropshadow(gaussian, #ff2e63, 18, 0.6, 0, 0);
+}

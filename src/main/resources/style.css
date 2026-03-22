@@ -1,0 +1,185 @@
+/* --- GLOBAL PREMIUM DARK MODE --- */
+.root {
+    /* A subtle spotlight effect behind your app */
+    -fx-background-color: radial-gradient(center 50% 0%, radius 100%, #1f242c, #0d1117);
+    -fx-font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+    -fx-font-size: 14px;
+}
+
+.label {
+    -fx-text-fill: #e6edf3;
+    -fx-font-weight: 600;
+}
+
+/* --- THE DROP ZONE (NEON PULSE STATE) --- */
+.drop-zone {
+    -fx-background-color: rgba(22, 27, 34, 0.6);
+    -fx-border-color: #30363d;
+    -fx-border-style: dashed;
+    -fx-border-width: 2px;
+    -fx-border-radius: 12px;
+    -fx-background-radius: 12px;
+    -fx-padding: 30px;
+    -fx-alignment: center;
+    /* Soft base shadow */
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.5), 15, 0, 0, 5);
+}
+
+.drop-zone-active {
+    /* When a file hovers over it, it glows Papaya Orange */
+    -fx-border-color: #ff8700;
+    -fx-background-color: rgba(255, 135, 0, 0.05);
+    -fx-effect: dropshadow(three-pass-box, rgba(255,135,0,0.4), 25, 0.3, 0, 0);
+}
+
+/* --- FROSTED GLASS CARDS --- */
+.card {
+    -fx-background-color: linear-gradient(to bottom right, #161b22, #11151b);
+    -fx-border-color: #21262d;
+    -fx-border-radius: 12px;
+    -fx-background-radius: 12px;
+    -fx-padding: 25px;
+    /* Outer shadow for 3D elevation */
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.6), 20, 0, 0, 10);
+}
+
+/* --- STANDARD BUTTONS (SLEEK & SHARP) --- */
+.button, .toggle-button {
+    -fx-background-color: linear-gradient(to bottom, #282e33, #21262d);
+    -fx-text-fill: #c9d1d9;
+    -fx-border-color: #363b42;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+    -fx-padding: 8px 18px;
+    -fx-cursor: hand;
+}
+
+.button:hover, .toggle-button:hover {
+    -fx-background-color: linear-gradient(to bottom, #30363d, #282e33);
+    -fx-border-color: #8b949e;
+    -fx-text-fill: #ffffff;
+}
+
+/* --- THE CTA (CALL TO ACTION) - RIDICULOUS TIER --- */
+.cta-button {
+    /* Papaya Orange to a fiery red/pink gradient */
+    -fx-background-color: linear-gradient(to bottom right, #ff8700, #ff1b6b);
+    -fx-text-fill: white;
+    -fx-font-weight: 900;
+    -fx-font-size: 15px;
+    -fx-border-color: transparent;
+    -fx-padding: 12px 24px;
+    -fx-background-radius: 8px;
+    /* Intense base shadow */
+    -fx-effect: dropshadow(three-pass-box, rgba(255, 135, 0, 0.4), 10, 0, 0, 5);
+}
+
+.cta-button:hover {
+    /* Reverses the gradient and creates a massive neon glow on hover */
+    -fx-background-color: linear-gradient(to bottom right, #ff9900, #ff3377);
+    -fx-effect: dropshadow(three-pass-box, rgba(255, 135, 0, 0.8), 25, 0.5, 0, 0);
+    -fx-cursor: hand;
+}
+
+/* --- PROGRESS BAR (RPM GAUGE LOOK) --- */
+.progress-bar {
+    -fx-pref-height: 12px;
+}
+
+.progress-bar > .track {
+    -fx-background-color: #0d1117;
+    -fx-border-color: #21262d;
+    -fx-border-radius: 10px;
+    -fx-background-radius: 10px;
+    /* Inner shadow to make the track look deep */
+    -fx-effect: innershadow(three-pass-box, rgba(0,0,0,0.8), 5, 0, 0, 2);
+}
+
+.progress-bar > .bar {
+    /* Gradient filling up like an engine revving */
+    -fx-background-color: linear-gradient(to right, #ff8700, #ff1b6b);
+    -fx-background-radius: 10px;
+    -fx-padding: 0px;
+}
+
+/* --- FLOATING TOOLBAR (GLASSMORPHISM VIBE) --- */
+.floating-toolbar {
+    -fx-background-color: rgba(22, 27, 34, 0.75);
+    -fx-background-radius: 10px;
+    -fx-border-color: rgba(255,255,255,0.05);
+    -fx-border-radius: 10px;
+    -fx-padding: 10px 20px;
+    /* Deep shadow to make it float highly over the PDF */
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.8), 25, 0, 0, 10);
+}
+
+/* --- ACTIVE TOOL STATES IN EDITOR --- */
+.toggle-button:selected {
+    -fx-background-color: rgba(255, 135, 0, 0.15);
+    -fx-border-color: #ff8700;
+    -fx-text-fill: #ff8700;
+    -fx-effect: dropshadow(three-pass-box, rgba(255,135,0,0.3), 10, 0, 0, 0);
+}
+
+/* --- COMBO BOX (DROPDOWN) STYLING --- */
+.combo-box {
+    -fx-background-color: #21262d;
+    -fx-border-color: #363b42;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+}
+.combo-box .list-cell {
+    -fx-text-fill: #c9d1d9;
+    -fx-background-color: #21262d;
+}
+.combo-box-popup .list-view .list-cell:hover {
+    -fx-background-color: #30363d;
+    -fx-text-fill: #ff8700;
+}
+
+/* --- THE MODE CARDS --- */
+.mode-card {
+    -fx-background-color: rgba(255, 255, 255, 0.03); /* Hyper-translucent */
+    -fx-border-color: rgba(255, 255, 255, 0.1);
+    -fx-border-width: 1px;
+    -fx-border-radius: 20px;
+    -fx-background-radius: 20px;
+    -fx-padding: 40px;
+    -fx-alignment: center;
+    -fx-cursor: hand;
+    /* The "Ghost" Shadow */
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.4), 30, 0, 0, 15);
+}
+
+.mode-card:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.07);
+    -fx-border-color: #ff8700; /* Papaya Glow */
+    /* Neon spread effect */
+    -fx-effect: dropshadow(three-pass-box, rgba(255, 135, 0, 0.3), 40, 0.2, 0, 0);
+}
+
+.mode-card-disabled {
+    -fx-opacity: 0.3;
+    -fx-cursor: default;
+    -fx-border-color: #30363d;
+}
+
+/* --- THE TEXT INSIDE CARDS --- */
+.mode-title {
+    -fx-font-size: 22px;
+    -fx-font-weight: 900;
+    -fx-text-fill: white;
+}
+
+.mode-description {
+    -fx-font-size: 13px;
+    -fx-text-fill: #8b949e;
+    -fx-text-alignment: center;
+}
+
+/* Animated Gradient Text for the Main Title */
+.hyper-title {
+    -fx-font-size: 32px;
+    -fx-font-weight: 900;
+    -fx-text-fill: linear-gradient(to right, #ffffff, #ff8700);
+}

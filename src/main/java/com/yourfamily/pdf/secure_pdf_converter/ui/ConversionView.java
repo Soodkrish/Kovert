@@ -1,0 +1,318 @@
+package com.yourfamily.pdf.secure_pdf_converter.ui;
+
+import javafx.application.Platform;
+import javafx.geometry.Insets;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.stage.DirectoryChooser;
+import javafx.stage.FileChooser;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.yourfamily.pdf.secure_pdf_converter.core.conversion.ConversionRouter;
+
+public class ConversionView extends BorderPane {
+
+    private final ListView<File> fileList = new ListView<>();
+    private final ComboBox<String> formatBox = new ComboBox<>();
+    private final TextField outputFolder = new TextField();
+    private final ProgressBar progressBar = new ProgressBar(0);
+    private final Label statusLabel = new Label("Ready to convert");
+    private final VBox dropZone = new VBox();
+
+    /* NEW */
+    private final CheckBox batchFolderMode = new CheckBox("Batch convert entire folder");
+    private final ComboBox<String> perFileFormat = new ComboBox<>();
+
+    public ConversionView(MainWindow app, File initialFile) {
+
+        setPadding(new Insets(30));
+
+        try {
+            getStylesheets().add(
+                getClass().getResource("/style.css").toExternalForm());
+        } catch (Exception e) {
+            System.err.println("style.css not found.");
+        }
+
+        /* TOP BAR */
+
+        Button backBtn = new Button("← Back");
+        backBtn.setOnAction(e -> app.showLanding());
+
+        HBox topBar = new HBox(backBtn);
+        topBar.setPadding(new Insets(0,0,20,0));
+
+        /* DROP ZONE */
+
+        Label dropTitle = new Label("Drop Files Here");
+        dropTitle.setStyle("-fx-font-size:20px;-fx-font-weight:bold;-fx-text-fill:white;");
+
+        Label dropSubtitle = new Label("or click to browse");
+        dropSubtitle.setStyle("-fx-text-fill:#8b949e;");
+
+        Button addBtn = new Button("+ Select Files");
+        addBtn.setOnAction(e -> addFiles());
+
+        dropZone.getChildren().addAll(dropTitle, dropSubtitle, addBtn);
+        dropZone.setSpacing(15);
+        dropZone.getStyleClass().add("drop-zone");
+
+        Button removeBtn = new Button("Remove Selected");
+        removeBtn.setOnAction(e -> {
+            File selected = fileList.getSelectionModel().getSelectedItem();
+            if (selected != null) fileList.getItems().remove(selected);
+        });
+
+        VBox leftColumn = new VBox(
+                15,
+                dropZone,
+                batchFolderMode,
+                new Label("Queued Files:"),
+                fileList,
+                removeBtn
+        );
+
+        HBox.setHgrow(leftColumn, Priority.ALWAYS);
+
+        /* OUTPUT FORMAT OPTIONS */
+
+        formatBox.getItems().addAll(
+                "pdf",
+                "png",
+                "jpg",
+                "docx",
+                "xlsx",
+                "pptx",
+                "html",
+                "txt"
+        );
+
+        formatBox.setValue("pdf");
+        formatBox.setMaxWidth(Double.MAX_VALUE);
+
+        /* PER FILE FORMAT */
+
+        perFileFormat.getItems().addAll(
+                "auto",
+                "pdf",
+                "png",
+                "jpg",
+                "docx",
+                "xlsx",
+                "pptx",
+                "html",
+                "txt"
+        );
+
+        perFileFormat.setValue("auto");
+
+        /* OUTPUT FOLDER */
+
+        Button browseFolder = new Button("Browse...");
+        browseFolder.setOnAction(e -> chooseFolder());
+
+        HBox folderBox = new HBox(10, outputFolder, browseFolder);
+        HBox.setHgrow(outputFolder, Priority.ALWAYS);
+
+        outputFolder.setPromptText("Select destination...");
+
+        /* CONVERT BUTTON */
+
+        Button convertBtn = new Button("START CONVERSION");
+        convertBtn.getStyleClass().add("cta-button");
+        convertBtn.setMaxWidth(Double.MAX_VALUE);
+        convertBtn.setOnAction(e -> startConversion());
+
+        progressBar.setMaxWidth(Double.MAX_VALUE);
+        progressBar.setVisible(false);
+
+        VBox settingsCard = new VBox(
+                20,
+                new Label("Global Output Format"),
+                formatBox,
+                new Label("Per-File Override"),
+                perFileFormat,
+                new Label("Save Destination"),
+                folderBox,
+                progressBar,
+                statusLabel,
+                convertBtn
+        );
+
+        settingsCard.getStyleClass().add("card");
+        settingsCard.setPrefWidth(400);
+
+        HBox centerSplit = new HBox(40, leftColumn, settingsCard);
+
+        setTop(topBar);
+        setCenter(centerSplit);
+
+        enableDragDrop();
+
+        if (initialFile != null) {
+            fileList.getItems().add(initialFile);
+        }
+    }
+
+    /* FILE PICKER */
+
+    private void addFiles() {
+
+        FileChooser chooser = new FileChooser();
+
+        List<File> files =
+                chooser.showOpenMultipleDialog(getScene().getWindow());
+
+        if (files != null) {
+            fileList.getItems().addAll(files);
+        }
+    }
+
+    /* OUTPUT FOLDER */
+
+    private void chooseFolder() {
+
+        DirectoryChooser chooser = new DirectoryChooser();
+
+        File folder = chooser.showDialog(getScene().getWindow());
+
+        if (folder != null) {
+            outputFolder.setText(folder.getAbsolutePath());
+        }
+    }
+
+    /* DRAG DROP */
+
+    private void enableDragDrop() {
+
+        dropZone.setOnDragOver(event -> {
+
+            if (event.getDragboard().hasFiles()) {
+
+                event.acceptTransferModes(
+                        javafx.scene.input.TransferMode.COPY);
+
+                if (!dropZone.getStyleClass()
+                        .contains("drop-zone-active")) {
+
+                    dropZone.getStyleClass()
+                            .add("drop-zone-active");
+                }
+            }
+
+            event.consume();
+        });
+
+        dropZone.setOnDragExited(e ->
+                dropZone.getStyleClass().remove("drop-zone-active"));
+
+        dropZone.setOnDragDropped(event -> {
+
+            if (event.getDragboard().hasFiles()) {
+
+                fileList.getItems().addAll(
+                        event.getDragboard().getFiles());
+            }
+
+            dropZone.getStyleClass().remove("drop-zone-active");
+
+            event.setDropCompleted(true);
+
+            event.consume();
+        });
+    }
+
+    /* OUTPUT PATH */
+
+    private String buildOutputPath(File input, File outputDir, String format) {
+
+        String name = input.getName();
+
+        int dot = name.lastIndexOf('.');
+
+        if (dot != -1) {
+            name = name.substring(0, dot);
+        }
+
+        return new File(outputDir, name + "." + format).getAbsolutePath();
+    }
+
+    /* CONVERSION ENGINE */
+
+    private void startConversion() {
+
+        List<File> files = new ArrayList<>(fileList.getItems());
+
+        if (files.isEmpty()) {
+            statusLabel.setText("⚠️ No files selected.");
+            return;
+        }
+
+        if (outputFolder.getText().isEmpty()) {
+            statusLabel.setText("⚠️ Select output folder.");
+            return;
+        }
+
+        String globalFormat = formatBox.getValue();
+
+        File outputDir = new File(outputFolder.getText());
+
+        progressBar.setVisible(true);
+        progressBar.setProgress(0);
+
+        new Thread(() -> {
+
+            try {
+
+                int total = files.size();
+                int count = 0;
+
+                for (File file : files) {
+
+                    count++;
+
+                    String format =
+                            perFileFormat.getValue().equals("auto")
+                                    ? globalFormat
+                                    : perFileFormat.getValue();
+
+                    Platform.runLater(() ->
+                            statusLabel.setText(
+                                    "Converting: " + file.getName()));
+
+                    String outputPath =
+                            buildOutputPath(file, outputDir, format);
+
+                    ConversionRouter.convert(
+                            file,
+                            null,
+                            format,
+                            outputPath
+                    );
+
+                    double progress = (double) count / total;
+
+                    Platform.runLater(() ->
+                            progressBar.setProgress(progress));
+                }
+
+                Platform.runLater(() ->
+                        statusLabel.setText("✅ Conversion complete"));
+
+            }
+
+            catch (Exception e) {
+
+                Platform.runLater(() ->
+                        statusLabel.setText(
+                                "❌ Failed: " + e.getMessage()));
+
+                e.printStackTrace();
+            }
+
+        }).start();
+    }
+}
