@@ -1,16 +1,17 @@
-# Maven build folder
+# Maven
 target/
+
+# Eclipse
+.classpath
+.project
+.settings/
 
 # Logs
 *.log
 
-# OS files
+# OS
 .DS_Store
 Thumbs.db
 
-# IDE (Eclipse/IntelliJ)
-.settings/
-.project
-.classpath
-.idea/
-*.iml
+# Optional (generated/test PDFs)
+*.pdf
