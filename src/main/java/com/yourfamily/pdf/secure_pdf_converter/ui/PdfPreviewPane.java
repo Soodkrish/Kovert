@@ -64,12 +64,16 @@ public final class PdfPreviewPane extends StackPane {
         imageView.setEffect(shadow);
 
         overlay.setManaged(false);
-        overlay.setPickOnBounds(false);
+        overlay.setPickOnBounds(true);
         contentGroup.setManaged(false);
 
         contentGroup.getChildren().addAll(imageView, overlay);
         contentGroup.getTransforms().add(zoomScale);
-
+        layoutBoundsProperty().addListener((obs, old, bounds) -> {
+            if(bounds.getWidth() > 0 && bounds.getHeight() > 0){
+                requestLayout();
+            }
+        });
         // 🔥 CRITICAL: wrap inside Pane (NOT direct StackPane child)
         Pane root = new Pane(contentGroup);
 
@@ -88,6 +92,7 @@ public final class PdfPreviewPane extends StackPane {
         enableKeyboardDelete();
 
         setFocusTraversable(true);
+        
     }
 
     /* ================= IMAGE ================= */
@@ -442,56 +447,39 @@ public final class PdfPreviewPane extends StackPane {
 
     private void enablePan(){
 
-    	overlay.setOnMousePressed(e -> {
+        overlay.setOnMousePressed(e -> {
+            if(e.isSecondaryButtonDown()){
+                setCursor(Cursor.CLOSED_HAND);
+                panStartX = e.getSceneX();
+                panStartY = e.getSceneY();
+            }
+        });
 
-    	    if(e.isSecondaryButtonDown()){
-    	        setCursor(Cursor.CLOSED_HAND);
-    	        panStartX = e.getSceneX();
-    	        panStartY = e.getSceneY();
-    	    }
-    	});
+        overlay.setOnMouseDragged(e -> {
+            if(e.isSecondaryButtonDown()){
 
-    	overlay.setOnMouseDragged(e -> {
+                double dx = e.getSceneX() - panStartX;
+                double dy = e.getSceneY() - panStartY;
 
-    	    if(e.isSecondaryButtonDown()){
+                // ✅ ALWAYS MOVE contentGroup ONLY
+                contentGroup.setLayoutX(contentGroup.getLayoutX() + dx);
+                contentGroup.setLayoutY(contentGroup.getLayoutY() + dy);
 
-    	        double dx = e.getSceneX() - panStartX;
-    	        double dy = e.getSceneY() - panStartY;
+                panStartX = e.getSceneX();
+                panStartY = e.getSceneY();
+            }
+        });
 
-    	        contentGroup.setLayoutX(contentGroup.getLayoutX() + dx);
-    	        contentGroup.setLayoutY(contentGroup.getLayoutY() + dy);
-
-    	        panStartX = e.getSceneX();
-    	        panStartY = e.getSceneY();
-    	    }
-    	});
-
-    	overlay.setOnMouseReleased(e -> setCursor(Cursor.OPEN_HAND));
-    	
-    	overlay.setOnMousePressed(e -> {
-    	    if(e.isSecondaryButtonDown()){
-    	        setCursor(Cursor.CLOSED_HAND);
-    	        panStartX = e.getSceneX();
-    	        panStartY = e.getSceneY();
-    	    }
-    	});
-
-    	overlay.setOnMouseDragged(e -> {
-    	    if(e.isSecondaryButtonDown()){
-    	        double dx = e.getSceneX() - panStartX;
-    	        double dy = e.getSceneY() - panStartY;
-
-    	        setTranslateX(getTranslateX() + dx);
-    	        setTranslateY(getTranslateY() + dy);
-
-    	        panStartX = e.getSceneX();
-    	        panStartY = e.getSceneY();
-    	    }
-    	});
-
-    	overlay.setOnMouseReleased(e -> setCursor(Cursor.OPEN_HAND));
+        overlay.setOnMouseReleased(e -> setCursor(Cursor.OPEN_HAND));
+        
+        overlay.setOnMouseClicked(e -> {
+            if(e.getClickCount() == 2){
+                contentGroup.setLayoutX(0);
+                contentGroup.setLayoutY(0);
+                setZoom(1.0);
+            }
+        });
     }
-
     /* ================= STYLE ================= */
 
     private void styleShape(Shape shape){

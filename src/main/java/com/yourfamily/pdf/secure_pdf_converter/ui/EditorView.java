@@ -72,7 +72,14 @@ public class EditorView extends BorderPane {
         Button backBtn = new Button("← Back");
         Button prevPage = new Button("◀");
         Button nextPage = new Button("▶");
+        Button zoomOut = new Button("-");
+        Button zoomIn = new Button("+");
+        Button zoomReset = new Button("100%");
 
+        // styling (uses your CSS automatically)
+        zoomOut.getStyleClass().add("button");
+        zoomIn.getStyleClass().add("button");
+        zoomReset.getStyleClass().add("button");
         Button undoBtn = new Button("Undo");
         Button redoBtn = new Button("Redo");
 
@@ -105,6 +112,7 @@ public class EditorView extends BorderPane {
         toolbar.getChildren().addAll(
                 backBtn,
                 prevPage,pageLabel,nextPage,
+                zoomOut, zoomIn, zoomReset,
                 undoBtn,redoBtn,
                 rectBtn,circleBtn,brushBtn,
                 applyBtn
@@ -113,7 +121,17 @@ public class EditorView extends BorderPane {
         backBtn.setOnAction(e -> app.showLanding());
         undoBtn.setOnAction(e -> preview.undo());
         redoBtn.setOnAction(e -> preview.redo());
+        zoomIn.setOnAction(e -> {
+            double z = preview.getScaleX();
+            preview.setZoom(Math.min(3.0, z * 1.2));
+        });
 
+        zoomOut.setOnAction(e -> {
+            double z = preview.getScaleX();
+            preview.setZoom(Math.max(0.5, z * 0.8));
+        });
+
+        zoomReset.setOnAction(e -> preview.setZoom(1.0));
         prevPage.setOnAction(e -> previousPage());
         nextPage.setOnAction(e -> nextPage());
 
@@ -122,7 +140,7 @@ public class EditorView extends BorderPane {
         /* ---------------- CANVAS ---------------- */
 
         ScrollPane scroll = new ScrollPane(preview);
-        scroll.setPannable(true);
+        scroll.setPannable(false);
         scroll.setOnScroll(e -> {
 
             double zoomFactor = e.getDeltaY() > 0 ? 1.1 : 0.9;
@@ -598,7 +616,7 @@ public class EditorView extends BorderPane {
             r.setStroke(Color.YELLOW);
             r.setFill(Color.color(1, 1, 0, 0.25));
             r.setStrokeWidth(2);
-            r.setMouseTransparent(false);
+            r.setMouseTransparent(true);
             r.setPickOnBounds(false); // 🔥 THIS IS THE MAGIC LINE
 
             r.setOnMouseClicked(e -> {
