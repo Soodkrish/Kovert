@@ -88,7 +88,7 @@ public final class PdfPreviewPane extends StackPane {
         contentGroup.setLayoutY(0);
 
         enableInteraction();
-        enablePan();
+        
         enableKeyboardDelete();
 
         setFocusTraversable(true);
@@ -202,17 +202,26 @@ public final class PdfPreviewPane extends StackPane {
 
     private void enableInteraction(){
 
-        overlay.addEventHandler(MouseEvent.MOUSE_PRESSED,e->{
+    	this.addEventHandler(MouseEvent.MOUSE_PRESSED, e -> { 
+    	
+    	
+
+    	    
 
             requestFocus();
 
-            if(activeTool==Tool.NONE)
+         // 🔥 PAN MODE
+            if(activeTool == Tool.NONE){
+                setCursor(Cursor.CLOSED_HAND);
+                panStartX = e.getSceneX();
+                panStartY = e.getSceneY();
                 return;
+            }
 
             if(onDrawStart!=null) onDrawStart.run();
 
-            startX=e.getX();
-            startY=e.getY();
+            startX = e.getX() - contentGroup.getLayoutX();
+            startY = e.getY() - contentGroup.getLayoutY();
 
             switch(activeTool){
 
@@ -256,11 +265,28 @@ public final class PdfPreviewPane extends StackPane {
             }
         });
 
-        overlay.addEventHandler(MouseEvent.MOUSE_DRAGGED,e->{
+    	this.addEventHandler(MouseEvent.MOUSE_DRAGGED, e -> {
 
-            double x=e.getX();
-            double y=e.getY();
+    	    
 
+    		double x = e.getX() - contentGroup.getLayoutX();
+    		double y = e.getY() - contentGroup.getLayoutY();
+            
+         // 🔥 PAN MODE
+            if(activeTool == Tool.NONE){
+
+                double dx = e.getSceneX() - panStartX;
+                double dy = e.getSceneY() - panStartY;
+
+                contentGroup.setLayoutX(contentGroup.getLayoutX() + dx);
+                contentGroup.setLayoutY(contentGroup.getLayoutY() + dy);
+
+                panStartX = e.getSceneX();
+                panStartY = e.getSceneY();
+
+                return;
+            }
+            
             if(currentShape instanceof Rectangle rect){
 
                 rect.setX(Math.min(startX,x));
@@ -283,7 +309,7 @@ public final class PdfPreviewPane extends StackPane {
             }
         });
 
-        overlay.addEventHandler(MouseEvent.MOUSE_RELEASED,e->{
+    	this.addEventHandler(MouseEvent.MOUSE_RELEASED, e -> { 
 
             if(onDrawEnd!=null) onDrawEnd.run();
             currentShape=null;
@@ -312,7 +338,7 @@ public final class PdfPreviewPane extends StackPane {
             dragOffset[0] = e.getX();
             dragOffset[1] = e.getY();
 
-            e.consume();
+           // e.consume();
         });
 
         shape.setOnMouseDragged(e->{
@@ -443,43 +469,9 @@ public final class PdfPreviewPane extends StackPane {
         });
     }
 
-    /* ================= PAN ================= */
+    
 
-    private void enablePan(){
-
-        overlay.setOnMousePressed(e -> {
-            if(e.isSecondaryButtonDown()){
-                setCursor(Cursor.CLOSED_HAND);
-                panStartX = e.getSceneX();
-                panStartY = e.getSceneY();
-            }
-        });
-
-        overlay.setOnMouseDragged(e -> {
-            if(e.isSecondaryButtonDown()){
-
-                double dx = e.getSceneX() - panStartX;
-                double dy = e.getSceneY() - panStartY;
-
-                // ✅ ALWAYS MOVE contentGroup ONLY
-                contentGroup.setLayoutX(contentGroup.getLayoutX() + dx);
-                contentGroup.setLayoutY(contentGroup.getLayoutY() + dy);
-
-                panStartX = e.getSceneX();
-                panStartY = e.getSceneY();
-            }
-        });
-
-        overlay.setOnMouseReleased(e -> setCursor(Cursor.OPEN_HAND));
-        
-        overlay.setOnMouseClicked(e -> {
-            if(e.getClickCount() == 2){
-                contentGroup.setLayoutX(0);
-                contentGroup.setLayoutY(0);
-                setZoom(1.0);
-            }
-        });
-    }
+   
     /* ================= STYLE ================= */
 
     private void styleShape(Shape shape){

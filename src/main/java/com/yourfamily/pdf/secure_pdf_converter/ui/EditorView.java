@@ -95,17 +95,9 @@ public class EditorView extends BorderPane {
         circleBtn.setToggleGroup(toolGroup);
         brushBtn.setToggleGroup(toolGroup);
 
-        toolGroup.selectedToggleProperty().addListener((obs,o,n)->{
-
-            if(n==rectBtn)
-                preview.setTool(PdfPreviewPane.Tool.RECTANGLE);
-
-            else if(n==circleBtn)
-                preview.setTool(PdfPreviewPane.Tool.ELLIPSE);
-
-            else if(n==brushBtn)
-                preview.setTool(PdfPreviewPane.Tool.BRUSH);
-        });
+        rectBtn.setOnAction(e -> toggleTool(rectBtn, PdfPreviewPane.Tool.RECTANGLE));
+        circleBtn.setOnAction(e -> toggleTool(circleBtn, PdfPreviewPane.Tool.ELLIPSE));
+        brushBtn.setOnAction(e -> toggleTool(brushBtn, PdfPreviewPane.Tool.BRUSH));
 
         Button applyBtn = new Button("APPLY REDACTION");
 
@@ -113,9 +105,8 @@ public class EditorView extends BorderPane {
                 backBtn,
                 prevPage,pageLabel,nextPage,
                 zoomOut, zoomIn, zoomReset,
-                undoBtn,redoBtn,
-                rectBtn,circleBtn,brushBtn,
-                applyBtn
+                undoBtn,redoBtn
+                
         );
 
         backBtn.setOnAction(e -> app.showLanding());
@@ -143,13 +134,22 @@ public class EditorView extends BorderPane {
         scroll.setPannable(false);
         scroll.setOnScroll(e -> {
 
-            double zoomFactor = e.getDeltaY() > 0 ? 1.1 : 0.9;
+            double zoomFactor = e.getDeltaY() > 0 ? 1.15 : 0.85;
 
-            double currentZoom = preview.getScaleX();
+            double oldZoom = preview.getScaleX();
+            double newZoom = Math.max(0.5, Math.min(3.0, oldZoom * zoomFactor));
 
-            double newZoom = Math.max(0.5, Math.min(3.0, currentZoom * zoomFactor));
+            // 🔥 Mouse position
+            double mouseX = e.getX();
+            double mouseY = e.getY();
+
+            // 🔥 Adjust content position so zoom centers on cursor
+            double f = (newZoom / oldZoom) - 1;
 
             preview.setZoom(newZoom);
+
+            preview.setTranslateX(preview.getTranslateX() - f * mouseX);
+            preview.setTranslateY(preview.getTranslateY() - f * mouseY);
 
             e.consume();
         });
@@ -159,8 +159,14 @@ public class EditorView extends BorderPane {
 
         preview.setOnDrawStart(() -> scroll.setPannable(false));
         preview.setOnDrawEnd(() -> scroll.setPannable(true));
+        preview.setTool(PdfPreviewPane.Tool.NONE);
 
-        VBox center = new VBox(toolbar, scroll);
+        ScrollPane toolbarScroll = new ScrollPane(toolbar);
+        toolbarScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        toolbarScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        toolbarScroll.setFitToHeight(true);
+
+        VBox center = new VBox(toolbarScroll, scroll);
         VBox.setVgrow(scroll, Priority.ALWAYS);
 
         /* ---------------- LOAD FILE ---------------- */
@@ -174,8 +180,34 @@ public class EditorView extends BorderPane {
         setCenter(mainSplit);
         
         
+        
     }
+    
+    private ToggleButton activeButton = null;
 
+    private void toggleTool(ToggleButton btn, PdfPreviewPane.Tool tool){
+
+        // 🔥 If clicking same button → deselect
+        if(activeButton == btn){
+
+            btn.setSelected(false);
+            activeButton = null;
+
+            preview.setTool(PdfPreviewPane.Tool.NONE); // back to PAN
+            return;
+        }
+
+        // 🔥 Switch tool
+        if(activeButton != null){
+            activeButton.setSelected(false);
+        }
+
+        activeButton = btn;
+        btn.setSelected(true);
+
+        preview.setTool(tool);
+    }
+    
     private void loadStylesheet() {
 
         try {
@@ -208,6 +240,8 @@ public class EditorView extends BorderPane {
         addWordBtn.setOnAction(e -> addWord());
 
         scanBtn.setOnAction(e -> scanWords());
+        
+        
         
      // ✅ LIVE SEARCH
       /*  wordInput.textProperty().addListener((obs, old, val) -> {
