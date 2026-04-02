@@ -132,27 +132,7 @@ public class EditorView extends BorderPane {
 
         ScrollPane scroll = new ScrollPane(preview);
         scroll.setPannable(false);
-        scroll.setOnScroll(e -> {
-
-            double zoomFactor = e.getDeltaY() > 0 ? 1.15 : 0.85;
-
-            double oldZoom = preview.getScaleX();
-            double newZoom = Math.max(0.5, Math.min(3.0, oldZoom * zoomFactor));
-
-            // 🔥 Mouse position
-            double mouseX = e.getX();
-            double mouseY = e.getY();
-
-            // 🔥 Adjust content position so zoom centers on cursor
-            double f = (newZoom / oldZoom) - 1;
-
-            preview.setZoom(newZoom);
-
-            preview.setTranslateX(preview.getTranslateX() - f * mouseX);
-            preview.setTranslateY(preview.getTranslateY() - f * mouseY);
-
-            e.consume();
-        });
+        
         // ❌ DO NOT FIT (this was breaking everything)
         scroll.setFitToWidth(false);
         scroll.setFitToHeight(false);
@@ -241,7 +221,36 @@ public class EditorView extends BorderPane {
 
         scanBtn.setOnAction(e -> scanWords());
         
-        
+        Label toolsLabel = new Label("Manual Redaction");
+
+        ToggleButton rectBtn = new ToggleButton("Box");
+        ToggleButton circleBtn = new ToggleButton("Circle");
+        ToggleButton brushBtn = new ToggleButton("Brush");
+
+        rectBtn.setMaxWidth(Double.MAX_VALUE);
+        circleBtn.setMaxWidth(Double.MAX_VALUE);
+        brushBtn.setMaxWidth(Double.MAX_VALUE);
+
+        rectBtn.setOnAction(e -> toggleTool(rectBtn, PdfPreviewPane.Tool.RECTANGLE));
+        circleBtn.setOnAction(e -> toggleTool(circleBtn, PdfPreviewPane.Tool.ELLIPSE));
+        brushBtn.setOnAction(e -> toggleTool(brushBtn, PdfPreviewPane.Tool.BRUSH));
+
+        Button applyBtn = new Button("APPLY REDACTION");
+        applyBtn.getStyleClass().add("cta-button");
+        applyBtn.setMaxWidth(Double.MAX_VALUE);
+        applyBtn.setOnAction(e -> performRedaction());
+
+        VBox toolsBox = new VBox(10,
+                toolsLabel,
+                rectBtn,
+                circleBtn,
+                brushBtn,
+                applyBtn
+        );
+
+        toolsBox.setPadding(new Insets(10,0,0,0));
+
+        panel.getChildren().add(toolsBox);
         
      // ✅ LIVE SEARCH
       /*  wordInput.textProperty().addListener((obs, old, val) -> {

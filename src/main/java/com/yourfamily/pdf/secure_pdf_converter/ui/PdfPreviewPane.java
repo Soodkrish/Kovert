@@ -86,7 +86,10 @@ public final class PdfPreviewPane extends StackPane {
         // 🔥 FORCE POSITION
         contentGroup.setLayoutX(0);
         contentGroup.setLayoutY(0);
-
+        setOnScroll(e -> {
+            double factor = e.getDeltaY() > 0 ? 1.1 : 0.9;
+            zoomAt(factor, e.getSceneX(), e.getSceneY());
+        });
         enableInteraction();
         
         enableKeyboardDelete();
@@ -137,7 +140,8 @@ public final class PdfPreviewPane extends StackPane {
     public Image getImage(){
         return image;
     }
-
+    
+    
     /* ================= PDF → SCREEN ================= */
 
     public Rectangle createBoxFromPdf(
@@ -220,8 +224,8 @@ public final class PdfPreviewPane extends StackPane {
 
             if(onDrawStart!=null) onDrawStart.run();
 
-            startX = e.getX() - contentGroup.getLayoutX();
-            startY = e.getY() - contentGroup.getLayoutY();
+            startX = (e.getX() - contentGroup.getLayoutX()) / zoomScale.getX();
+            startY = (e.getY() - contentGroup.getLayoutY()) / zoomScale.getY();
 
             switch(activeTool){
 
@@ -269,8 +273,8 @@ public final class PdfPreviewPane extends StackPane {
 
     	    
 
-    		double x = e.getX() - contentGroup.getLayoutX();
-    		double y = e.getY() - contentGroup.getLayoutY();
+    		double x = (e.getX() - contentGroup.getLayoutX()) / zoomScale.getX();
+    		double y = (e.getY() - contentGroup.getLayoutY()) / zoomScale.getY();
             
          // 🔥 PAN MODE
             if(activeTool == Tool.NONE){
@@ -278,9 +282,10 @@ public final class PdfPreviewPane extends StackPane {
                 double dx = e.getSceneX() - panStartX;
                 double dy = e.getSceneY() - panStartY;
 
-                contentGroup.setLayoutX(contentGroup.getLayoutX() + dx);
-                contentGroup.setLayoutY(contentGroup.getLayoutY() + dy);
+                double smooth = 0.85;
 
+                contentGroup.setLayoutX(contentGroup.getLayoutX() + dx * smooth);
+                contentGroup.setLayoutY(contentGroup.getLayoutY() + dy * smooth);
                 panStartX = e.getSceneX();
                 panStartY = e.getSceneY();
 
@@ -507,7 +512,24 @@ public final class PdfPreviewPane extends StackPane {
     public Pane getOverlay(){
         return overlay;
     }
+    
+    public void zoomAt(double factor, double sceneX, double sceneY){
 
+        double oldZoom = zoomScale.getX();
+        double newZoom = Math.max(0.5, Math.min(3.0, oldZoom * factor));
+
+        double f = (newZoom / oldZoom) - 1;
+
+        double dx = sceneX - contentGroup.localToScene(0,0).getX();
+        double dy = sceneY - contentGroup.localToScene(0,0).getY();
+
+        zoomScale.setX(newZoom);
+        zoomScale.setY(newZoom);
+
+        contentGroup.setLayoutX(contentGroup.getLayoutX() - f * dx);
+        contentGroup.setLayoutY(contentGroup.getLayoutY() - f * dy);
+    }
+    
     public void setOnDrawStart(Runnable r){onDrawStart=r;}
     public void setOnDrawEnd(Runnable r){onDrawEnd=r;}
 }

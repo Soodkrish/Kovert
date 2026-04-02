@@ -3,10 +3,13 @@ package com.yourfamily.pdf.secure_pdf_converter.core.conversion;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 public final class ConversionRouter {
 
@@ -74,14 +77,45 @@ public final class ConversionRouter {
         return handler.convert(input, output);
     }
 
-    public static List<String> getSupportedRoutes() {
+    private static final Map<String, Map<String, ConversionHandler>> GRAPH = new HashMap<>();
 
-        return ROUTES.keySet()
-                .stream()
-                .sorted()
-                .toList();
+    static {
+        for (var entry : ROUTES.entrySet()) {
+            String[] parts = entry.getKey().split("->", 2);
+            if (parts.length != 2) continue;
+
+            String from = parts[0];
+            String to = parts[1];
+
+            GRAPH
+                .computeIfAbsent(from, k -> new HashMap<>())
+                .put(to, entry.getValue());
+        }
     }
+    
+    public static Map<String, List<String>> getSupportedRoutes() {
 
+        Map<String, List<String>> result = new TreeMap<>();
+
+        for (String route : ROUTES.keySet()) {
+
+            String[] parts = route.split("->", 2);
+
+            if (parts.length != 2) continue;
+
+            String source = parts[0];
+            String target = parts[1];
+
+            result
+                .computeIfAbsent(source, k -> new ArrayList<>())
+                .add(target);
+        }
+
+        result.forEach((k, v) -> v.sort(String::compareTo));
+
+        return result;
+    }
+    
     public static List<String> getSupportedTargets(String from) {
 
         if (from == null || from.isBlank()) {

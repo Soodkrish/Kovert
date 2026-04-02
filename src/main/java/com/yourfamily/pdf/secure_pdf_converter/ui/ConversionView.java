@@ -169,6 +169,39 @@ public class ConversionView extends BorderPane {
         if (initialFile != null) {
             fileList.getItems().add(initialFile);
         }
+        Label privacy = new Label(
+        	    "🔒 All processing is local. No uploads. No tracking."
+        	);
+
+        	privacy.setStyle("-fx-text-fill:#8b949e;");
+        	setBottom(privacy);
+        	
+        	batchFolderMode.setOnAction(e -> {
+
+        	    if(batchFolderMode.isSelected()){
+
+        	        DirectoryChooser chooser = new DirectoryChooser();
+        	        chooser.setTitle("Select Folder to Convert");
+
+        	        File dir = chooser.showDialog(getScene().getWindow());
+
+        	        if(dir != null){
+
+        	            fileList.getItems().clear();
+
+        	            File[] files = dir.listFiles(f -> f.isFile());
+
+        	            if(files != null){
+        	                fileList.getItems().addAll(files);
+        	            }
+
+        	            statusLabel.setText("📂 Loaded " + fileList.getItems().size() + " files from folder");
+
+        	        } else {
+        	            batchFolderMode.setSelected(false);
+        	        }
+        	    }
+        	});
     }
 
     private void addFiles() {
@@ -278,6 +311,8 @@ public class ConversionView extends BorderPane {
 
                     double progress = (double) count / total;
                     Platform.runLater(() -> progressBar.setProgress(progress));
+                    
+
                 }
 
                 Platform.runLater(() -> statusLabel.setText("Conversion complete"));
@@ -292,40 +327,213 @@ public class ConversionView extends BorderPane {
 
     private StackPane buildConversionGuide() {
 
-        Label trigger = new Label("Available conversions");
-        trigger.getStyleClass().add("conversion-guide-trigger");
+    	Button trigger = new Button("⚡ Supported Conversions");
+    	trigger.getStyleClass().add("button");
+    	trigger.setStyle("""
+    	    -fx-background-color:#21262d;
+    	    -fx-text-fill:white;
+    	    -fx-background-radius:8;
+    	    -fx-padding:6 14;
+    	""");
 
         conversionPopupContent.getStyleClass().add("conversion-guide-popup");
-        conversionPopupContent.getChildren().setAll(buildConversionLabels());
+        conversionPopupContent.getChildren().setAll(buildConversionMatrix());
+        conversionPopupContent.setStyle("""
+        	    -fx-background-color:#0d1117;
+        	    -fx-background-radius:14;
+        	    -fx-border-radius:14;
+        	    -fx-border-color:#30363d;
+        	    -fx-effect:dropshadow(gaussian, rgba(0,0,0,0.6), 20,0,0,4);
+        	""");
         conversionPopup.getContent().setAll(conversionPopupContent);
-        conversionPopup.setAutoHide(false);
+        conversionPopup.setAutoHide(true);
         conversionPopup.setAutoFix(true);
 
-        trigger.addEventHandler(MouseEvent.MOUSE_ENTERED, e -> showConversionPopup(trigger));
-        trigger.addEventHandler(MouseEvent.MOUSE_EXITED, e -> hideConversionPopupIfOutside());
-        conversionPopupContent.addEventHandler(MouseEvent.MOUSE_ENTERED, e -> showConversionPopup(trigger));
-        conversionPopupContent.addEventHandler(MouseEvent.MOUSE_EXITED, e -> hideConversionPopupIfOutside());
+        trigger.setOnAction(e -> {
+
+            if(conversionPopup.isShowing()){
+                conversionPopup.hide();
+            } else {
+                showConversionPopup(trigger);
+            }
+        });
+        
 
         StackPane wrapper = new StackPane(trigger);
         wrapper.setAlignment(Pos.CENTER);
         wrapper.setMinWidth(220);
         return wrapper;
     }
+    
+    private VBox buildConversionMatrix(){
 
-    private List<Label> buildConversionLabels() {
+        VBox container = new VBox(18);
+        container.setPadding(new Insets(16));
+        container.setPrefWidth(300);
 
-        List<Label> labels = new ArrayList<>();
+        Label header = new Label("⚡ Supported Conversions");
+        header.setStyle("""
+            -fx-text-fill:white;
+            -fx-font-size:16px;
+            -fx-font-weight:bold;
+        """);
 
-        for (String route : ConversionRouter.getSupportedRoutes()) {
-            Label label = new Label(route.replace("->", "  ->  "));
-            label.getStyleClass().add("conversion-guide-item");
-            labels.add(label);
+        Label sub = new Label("Click to select output format");
+        sub.setStyle("-fx-text-fill:#8b949e;");
+
+        container.getChildren().addAll(header, sub);
+
+        // 🔥 DYNAMIC DATA FROM ROUTER
+        var routes = ConversionRouter.getSupportedRoutes();
+
+        routes.forEach((source, targets) -> {
+            container.getChildren().add(createAdvancedCard(source, targets));
+        });
+
+        return container;
+    }
+    
+    
+    
+    private String getIcon(String type){
+
+        return switch(type.toLowerCase()){
+            case "pdf" -> "📄";
+            case "docx", "pptx", "xlsx" -> "🧾";
+            case "png", "jpg", "jpeg" -> "🖼";
+            case "html" -> "🌐";
+            case "md", "markdown" -> "📝";
+            default -> "📁";
+        };
+    }
+    
+    private VBox createAdvancedCard(String source, List<String> targets){
+
+        Label title = new Label(getIcon(source) + " " + source.toUpperCase());
+        title.setStyle("""
+            -fx-text-fill:white;
+            -fx-font-size:13px;
+            -fx-font-weight:bold;
+        """);
+
+        HBox formatsRow = new HBox(6);
+
+        for(String t : targets){
+
+            Label chip = new Label(t.toUpperCase());
+            chip.setStyle("""
+                -fx-background-color:#21262d;
+                -fx-text-fill:#c9d1d9;
+                -fx-padding:3 8;
+                -fx-background-radius:6;
+            """);
+
+            chip.setOnMouseEntered(e -> chip.setStyle("""
+                -fx-background-color:#30363d;
+                -fx-text-fill:white;
+                -fx-padding:3 8;
+                -fx-background-radius:6;
+            """));
+
+            chip.setOnMouseExited(e -> chip.setStyle("""
+                -fx-background-color:#21262d;
+                -fx-text-fill:#c9d1d9;
+                -fx-padding:3 8;
+                -fx-background-radius:6;
+            """));
+
+            // 🔥 CLICK = SELECT FORMAT
+            chip.setOnMouseClicked(e -> {
+                formatBox.setValue(t.toLowerCase());
+                statusLabel.setText("Selected: " + source + " → " + t);
+                conversionPopup.hide();
+            });
+
+            formatsRow.getChildren().add(chip);
         }
 
-        return labels;
+        VBox card = new VBox(8, title, formatsRow);
+        card.setPadding(new Insets(12));
+
+        card.setStyle("""
+            -fx-background-color:#161b22;
+            -fx-background-radius:12;
+            -fx-border-radius:12;
+            -fx-border-color:#30363d;
+        """);
+
+        card.setOnMouseEntered(e -> card.setStyle("""
+            -fx-background-color:#21262d;
+            -fx-background-radius:12;
+            -fx-border-radius:12;
+            -fx-border-color:#58a6ff;
+        """));
+
+        card.setOnMouseExited(e -> card.setStyle("""
+            -fx-background-color:#161b22;
+            -fx-background-radius:12;
+            -fx-border-radius:12;
+            -fx-border-color:#30363d;
+        """));
+
+        return card;
+    }
+    
+    private VBox createCard(String title, String formats){
+
+        Label titleLabel = new Label(title);
+        titleLabel.setStyle("""
+            -fx-text-fill:white;
+            -fx-font-size:13px;
+            -fx-font-weight:bold;
+        """);
+
+        Label desc = new Label(formats);
+        desc.setStyle("-fx-text-fill:#8b949e; -fx-font-size:11px;");
+
+        VBox card = new VBox(5, titleLabel, desc);
+        card.setPadding(new Insets(10));
+
+        card.setStyle("""
+            -fx-background-color:#161b22;
+            -fx-background-radius:10;
+            -fx-border-radius:10;
+            -fx-border-color:#30363d;
+        """);
+
+        // 🔥 HOVER EFFECT (PREMIUM FEEL)
+        card.setOnMouseEntered(e -> card.setStyle("""
+            -fx-background-color:#21262d;
+            -fx-background-radius:10;
+            -fx-border-radius:10;
+            -fx-border-color:#58a6ff;
+        """));
+
+        card.setOnMouseExited(e -> card.setStyle("""
+            -fx-background-color:#161b22;
+            -fx-background-radius:10;
+            -fx-border-radius:10;
+            -fx-border-color:#30363d;
+        """));
+        card.setOnMouseClicked(e -> {
+
+            String format = extractPrimaryFormat(formats);
+
+            formatBox.setValue(format.toLowerCase());
+
+            statusLabel.setText("Selected format: " + format);
+        });
+        
+        return card;
+        
+        
+    }
+    
+    private String extractPrimaryFormat(String formats){
+        return formats.split("•")[0].trim();
     }
 
-    private void showConversionPopup(Label trigger) {
+    private void showConversionPopup(Button trigger) {
 
         if (getScene() == null || getScene().getWindow() == null) {
             return;
@@ -336,8 +544,8 @@ public class ConversionView extends BorderPane {
             return;
         }
 
-        double x = bounds.getMinX() - 70;
-        double y = bounds.getMaxY() + 8;
+        double x = bounds.getMinX() - 40;
+        double y = bounds.getMaxY() + 10;
 
         if (!conversionPopup.isShowing()) {
             conversionPopup.show(getScene().getWindow(), x, y);

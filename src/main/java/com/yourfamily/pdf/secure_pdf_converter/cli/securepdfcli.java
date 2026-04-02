@@ -201,14 +201,17 @@ public final class securepdfcli {
 
     private static void printSupportedConversions() {
 
-        List<String> routes = new ArrayList<>(ConversionRouter.getSupportedRoutes());
+        Map<String, List<String>> routes = ConversionRouter.getSupportedRoutes();
 
         System.out.println();
         System.out.println("SUPPORTED CONVERSIONS");
         System.out.println("---------------------");
 
-        for (String route : routes) {
-            System.out.println("  " + route);
+        for (var entry : routes.entrySet()) {
+            String from = entry.getKey();
+            for (String to : entry.getValue()) {
+                System.out.println("  " + from + " -> " + to);
+            }
         }
 
         System.out.println();
