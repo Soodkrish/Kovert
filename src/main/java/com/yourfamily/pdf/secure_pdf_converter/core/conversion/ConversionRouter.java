@@ -3,9 +3,12 @@ package com.yourfamily.pdf.secure_pdf_converter.core.conversion;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -67,13 +70,18 @@ public final class ConversionRouter {
 
         String to = toFlag.toLowerCase();
         String key = from + "->" + to;
+
         ConversionHandler handler = ROUTES.get(key);
 
         if (handler == null) {
             throw new IllegalArgumentException("Unsupported conversion: " + key);
         }
 
-        File output = buildOutputFile(input, to, outputOverride);
+        // 🔥 FIX: DO NOT OVERRIDE OUTPUT PATH
+        File output = (outputOverride != null)
+                ? new File(outputOverride)
+                : buildOutputFile(input, to, null);
+
         return handler.convert(input, output);
     }
 
@@ -116,6 +124,44 @@ public final class ConversionRouter {
         return result;
     }
     
+    public static List<String> findConversionPath(String from, String to) {
+
+        from = from.toLowerCase();
+        to = to.toLowerCase();
+
+        if (from.equals(to)) return List.of(from);
+
+        Set<String> visited = new HashSet<>();
+        Queue<List<String>> queue = new LinkedList<>();
+
+        queue.add(List.of(from));
+
+        while (!queue.isEmpty()) {
+
+            List<String> path = queue.poll();
+            String last = path.get(path.size() - 1);
+
+            if (!visited.add(last)) continue;
+
+            Map<String, ConversionHandler> neighbors =
+                    GRAPH.getOrDefault(last, Map.of());
+
+            for (String next : neighbors.keySet()) {
+
+                List<String> newPath = new ArrayList<>(path);
+                newPath.add(next);
+
+                if (next.equals(to)) {
+                    return newPath;
+                }
+
+                queue.add(newPath);
+            }
+        }
+
+        return List.of(); // no path
+    }
+    
     public static List<String> getSupportedTargets(String from) {
 
         if (from == null || from.isBlank()) {
@@ -134,7 +180,56 @@ public final class ConversionRouter {
 
         return new ArrayList<>(targets);
     }
+    
+    public static File smartConvert(
+            File input,
+            String from,
+            String to,
+            String outputOverride) throws Exception {
 
+        List<String> path = findConversionPath(from, to);
+
+        if (path.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "No conversion path: " + from + " -> " + to);
+        }
+        
+        // direct conversion
+        if (path.size() == 2) {
+            return convert(input, from, to, outputOverride);
+        }
+
+        // multi-step
+        File currentInput = input;
+
+        for (int i = 0; i < path.size() - 1; i++) {
+
+            String stepFrom = path.get(i);
+            String stepTo = path.get(i + 1);
+
+            boolean isLast = (i == path.size() - 2);
+
+            
+            File output;
+
+                    if (isLast) {
+                        output = buildOutputFile(input, to, outputOverride);
+                    } else {
+                        output = File.createTempFile("conv_", "." + stepTo);
+                        output.deleteOnExit(); // 🔥 fix temp leak
+                    }
+            		
+
+            currentInput = convert(currentInput, stepFrom, stepTo, output.getAbsolutePath());
+            
+            System.out.println("FINAL OUTPUT FILE: " + currentInput.getAbsolutePath());
+            
+          
+        }
+
+        return currentInput;
+    }
+    
     private static File buildOutputFile(
             File input,
             String newExtension,

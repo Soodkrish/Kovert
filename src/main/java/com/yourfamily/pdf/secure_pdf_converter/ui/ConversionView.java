@@ -165,7 +165,9 @@ public class ConversionView extends BorderPane {
         setCenter(centerSplit);
 
         enableDragDrop();
-
+        System.out.println(
+        	    ConversionRouter.findConversionPath("docx", "xlsx")
+        	);
         if (initialFile != null) {
             fileList.getItems().add(initialFile);
         }
@@ -202,7 +204,7 @@ public class ConversionView extends BorderPane {
         	        }
         	    }
         	});
-    }
+    }	
 
     private void addFiles() {
 
@@ -296,18 +298,67 @@ public class ConversionView extends BorderPane {
                     String format = perFileFormat.getValue().equals("auto")
                             ? globalFormat
                             : perFileFormat.getValue();
+                    
+                    String from = file.getName()
+                            .substring(file.getName().lastIndexOf('.') + 1);
 
+                    List<String> path = ConversionRouter.findConversionPath(from, format);
+
+                    if (path.size() > 2) {
+                        Platform.runLater(() ->
+                            statusLabel.setText("⚠ Indirect: " + String.join(" → ", path))
+                        );
+
+                        Thread.sleep(1200); // small delay so user sees it
+                    }
                     Platform.runLater(() ->
                             statusLabel.setText("Converting: " + file.getName()));
 
-                    String outputPath = buildOutputPath(file, outputDir, format);
+                    
 
-                    ConversionRouter.convert(
-                            file,
-                            null,
-                            format,
-                            outputPath
-                    );
+                 // 🔥 prevent useless conversion
+                 if (from.equals(format)) {
+                     Platform.runLater(() ->
+                         statusLabel.setText("⚠ Already in " + format.toUpperCase())
+                     );
+                     continue;
+                 }
+
+                 // 🔥 show steps
+                 if (path.size() > 2) {
+
+                     for (int i = 0; i < path.size() - 1; i++) {
+
+                         String stepFrom = path.get(i);
+                         String stepTo = path.get(i + 1);
+                         int stepNum = i + 1;
+                         int totalSteps = path.size() - 1;
+
+                         Platform.runLater(() ->
+                             statusLabel.setText("Step " + stepNum + "/" + totalSteps +
+                                     ": " + stepFrom.toUpperCase() + " → " + stepTo.toUpperCase())
+                         );
+
+                         try {
+                             Thread.sleep(700);
+                         } catch (InterruptedException ignored) {}
+                     }
+                 }
+
+                 // 🔥 actual conversion
+                 String outputPath = buildOutputPath(file, outputDir, format);
+
+                 File result = ConversionRouter.smartConvert(
+                         file,
+                         from,
+                         format,
+                         outputPath
+                 );
+                 System.out.println("UI EXPECTED PATH: " + outputPath);
+                 // 🔥 show final path
+                 Platform.runLater(() ->
+                     statusLabel.setText("✅ Saved: " + result.getAbsolutePath())
+                 );
 
                     double progress = (double) count / total;
                     Platform.runLater(() -> progressBar.setProgress(progress));
@@ -316,6 +367,7 @@ public class ConversionView extends BorderPane {
                 }
 
                 Platform.runLater(() -> statusLabel.setText("Conversion complete"));
+                
 
             } catch (Exception e) {
                 Platform.runLater(() ->
@@ -563,5 +615,11 @@ public class ConversionView extends BorderPane {
                 conversionPopup.hide();
             }
         });
+    }
+    
+    private String safeExt(File file) {
+        String name = file.getName();
+        int dot = name.lastIndexOf('.');
+        return dot == -1 ? "" : name.substring(dot + 1).toLowerCase();
     }
 }

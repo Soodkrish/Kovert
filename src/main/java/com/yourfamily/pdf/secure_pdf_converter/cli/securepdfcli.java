@@ -1,7 +1,6 @@
 package com.yourfamily.pdf.secure_pdf_converter.cli;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,8 +71,8 @@ public final class securepdfcli {
                     try {
                         processSingleFile(file, fromFlag, toFlag, outputPath);
                     } catch (Exception e) {
-                        System.err.println("Failed: " + file.getName()
-                                + " -> " + e.getMessage());
+                    	System.err.println("❌ Failed: " + file.getName());
+                    	System.err.println("   Reason: " + e.getMessage());
                     }
                 }
 
@@ -93,6 +92,13 @@ public final class securepdfcli {
 
             double seconds = (end - start) / 1_000_000_000.0;
             printMetrics(input, output, seconds);
+            
+            if (output.exists()) {
+                System.out.println("✅ File created successfully");
+            } else {
+                System.out.println("❌ Output file not found after conversion");
+            }
+           
 
         } catch (Exception e) {
             System.err.println("Conversion failed: " + e.getMessage());
@@ -105,11 +111,49 @@ public final class securepdfcli {
             String toFlag,
             String outputOverride) throws Exception {
 
-        String detectedFrom = getExtension(input.getName()).toLowerCase();
+    	String detectedFrom = safeExt(input.getName());
         String from = fromFlag != null ? fromFlag.toLowerCase() : detectedFrom;
         String to = determineTargetExtension(from, toFlag);
+        if (from.equals(to)) {
+            System.out.println("⚠ Already in target format: " + to);
+            return input;
+        }
+        
+        if (outputOverride != null) {
+            File out = new File(outputOverride);
 
-        return ConversionRouter.convert(input, from, to, outputOverride);
+            // if parent folder exists → create it
+            File parent = out.getParentFile();
+            if (parent != null && !parent.exists()) {
+                parent.mkdirs();
+            }
+        }
+        List<String> path = ConversionRouter.findConversionPath(from, to);
+
+        if (path.isEmpty()) {
+            throw new IllegalArgumentException(
+                "No conversion path found: " + from + " -> " + to
+            );
+        }
+
+        // 🔥 show path
+        System.out.println("🔀 Conversion path: " + String.join(" → ", path));
+
+        // 🔥 show steps
+        if (path.size() > 2) {
+            for (int i = 0; i < path.size() - 1; i++) {
+                String stepFrom = path.get(i);
+                String stepTo = path.get(i + 1);
+
+                System.out.println(
+                    "Step " + (i + 1) + "/" + (path.size() - 1) +
+                    ": " + stepFrom.toUpperCase() + " → " + stepTo.toUpperCase()
+                );
+            }
+        }
+        
+        // 🔥 run smart conversion
+        return ConversionRouter.smartConvert(input, from, to, outputOverride);
     }
 
     private static String determineTargetExtension(String from, String toFlag) {
@@ -148,7 +192,12 @@ public final class securepdfcli {
         double seconds = (end - start) / 1_000_000_000.0;
 
         System.out.printf("Processed: %s -> %s (%.2f sec)%n",
-                file.getName(), output.getName(), seconds);
+                file.getName(), output.getAbsolutePath(), seconds);
+    }	
+    
+    private static String safeExt(String name) {
+        int dot = name.lastIndexOf('.');
+        return dot == -1 ? "" : name.substring(dot + 1).toLowerCase();
     }
 
     private static String resolveBatchOutput(
@@ -167,7 +216,7 @@ public final class securepdfcli {
             return outputTarget.getAbsolutePath();
         }
 
-        String detectedFrom = getExtension(input.getName()).toLowerCase();
+        String detectedFrom = safeExt(input.getName());
         String from = fromFlag != null ? fromFlag.toLowerCase() : detectedFrom;
         String to = determineTargetExtension(from, toFlag);
 
@@ -191,7 +240,7 @@ public final class securepdfcli {
         System.out.println("SECURE PDF CONVERTER");
         System.out.println("------------------------------------");
         System.out.println("Input:  " + input.getName());
-        System.out.println("Output: " + output.getName());
+        System.out.println("Output: " + output.getAbsolutePath());
         System.out.printf("Conversion time: %.2f seconds%n", seconds);
         System.out.println("Memory used: " + usedMemory + " MB");
         System.out.println("Status: SUCCESS");
