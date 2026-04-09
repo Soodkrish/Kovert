@@ -4,6 +4,7 @@ import javafx.animation.FadeTransition;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.Group;
+import javafx.scene.Node;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -342,20 +343,35 @@ public final class PdfPreviewPane extends StackPane {
 
             dragOffset[0] = e.getX();
             dragOffset[1] = e.getY();
+            
+            panStartX = e.getSceneX();
+            panStartY = e.getSceneY();
 
            // e.consume();
         });
 
-        shape.setOnMouseDragged(e->{
+        shape.setOnMouseDragged(e -> {
 
-            double dx = e.getX() - dragOffset[0];
-            double dy = e.getY() - dragOffset[1];
+            double zoom = zoomScale.getX();
 
-            // 🔥 MOVE USING REAL COORDS (NOT TRANSLATE)
+            double dx = (e.getSceneX() - panStartX) / zoom;
+            double dy = (e.getSceneY() - panStartY) / zoom;
 
             if(shape instanceof Rectangle r){
                 r.setX(r.getX() + dx);
                 r.setY(r.getY() + dy);
+
+                // 🔥 FORCE HANDLE UPDATE (THIS WAS MISSING)
+                if(r.getUserData() instanceof List<?> handles){
+                    List<?> h = (List<?>) r.getUserData();
+
+                    updateHandles(r,
+                        (Circle)h.get(0),
+                        (Circle)h.get(1),
+                        (Circle)h.get(2),
+                        (Circle)h.get(3)
+                    );
+                }
             }
             else if(shape instanceof Ellipse el){
                 el.setCenterX(el.getCenterX() + dx);
@@ -365,6 +381,9 @@ public final class PdfPreviewPane extends StackPane {
                 p.setLayoutX(p.getLayoutX() + dx);
                 p.setLayoutY(p.getLayoutY() + dy);
             }
+
+            panStartX = e.getSceneX();
+            panStartY = e.getSceneY();
 
             e.consume();
         });
@@ -395,10 +414,18 @@ public final class PdfPreviewPane extends StackPane {
 
             if(e.getCode()==KeyCode.DELETE){
 
-                for(Shape s:selectedShapes){
-                    overlay.getChildren().remove(s);
-                    shapes.remove(s);
-                }
+            	for(Shape s:selectedShapes){
+
+            	    overlay.getChildren().remove(s);
+            	    shapes.remove(s);
+
+            	    // 🔥 REMOVE HANDLES
+            	    if(s.getUserData() instanceof List<?> handles){
+            	        for(Object h : handles){
+            	            overlay.getChildren().remove((Node) h);
+            	        }
+            	    }
+            	}
 
                 selectedShapes.clear();
             }
@@ -414,7 +441,12 @@ public final class PdfPreviewPane extends StackPane {
         Circle bl=createHandle();
         Circle br=createHandle();
 
-        overlay.getChildren().addAll(tl,tr,bl,br);
+        List<Circle> handles = List.of(tl, tr, bl, br);
+
+	     // 🔥 attach handles to rectangle
+	     rect.setUserData(handles);
+	
+	     overlay.getChildren().addAll(handles);
 
         updateHandles(rect,tl,tr,bl,br);
 
@@ -429,10 +461,13 @@ public final class PdfPreviewPane extends StackPane {
     }
 
     private Circle createHandle(){
-
+    	
         Circle c=new Circle(5);
         c.setFill(Color.WHITE);
         c.setStroke(Color.BLACK);
+        c.setMouseTransparent(false);
+        c.setScaleX(1 / zoomScale.getX());
+        c.setScaleY(1 / zoomScale.getY());
         return c;
     }
 
@@ -494,6 +529,13 @@ public final class PdfPreviewPane extends StackPane {
         overlay.getChildren().remove(s);
         shapes.remove(s);
 
+        // 🔥 remove handles too
+        if(s.getUserData() instanceof List<?> handles){
+            for(Object h : handles){
+                overlay.getChildren().remove((Node) h);
+            }
+        }
+
         redoStack.push(s);
     }
 
@@ -505,6 +547,13 @@ public final class PdfPreviewPane extends StackPane {
 
         overlay.getChildren().add(s);
         shapes.add(s);
+
+        // 🔥 restore handles
+        if(s.getUserData() instanceof List<?> handles){
+            for(Object h : handles){
+                overlay.getChildren().add((Node) h);
+            }
+        }	
 
         undoStack.push(s);
     }

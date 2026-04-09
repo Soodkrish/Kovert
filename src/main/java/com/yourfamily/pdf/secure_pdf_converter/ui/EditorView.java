@@ -12,6 +12,7 @@ import com.yourfamily.pdf.secure_pdf_converter.core.redaction.word.TesseractWord
 import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -57,6 +58,7 @@ public class EditorView extends BorderPane {
 
         this.app = app;
         loadStylesheet();
+        setStyle("-fx-background-color: transparent;");
 
         SplitPane mainSplit = new SplitPane();
 
@@ -108,6 +110,7 @@ public class EditorView extends BorderPane {
                 undoBtn,redoBtn
                 
         );
+        toolbar.getStyleClass().add("floating-toolbar");
 
         backBtn.setOnAction(e -> app.showLanding());
         undoBtn.setOnAction(e -> preview.undo());
@@ -131,6 +134,7 @@ public class EditorView extends BorderPane {
         /* ---------------- CANVAS ---------------- */
 
         ScrollPane scroll = new ScrollPane(preview);
+        scroll.setStyle("-fx-background: #0d1117; -fx-background-color: #0d1117;");
         scroll.setPannable(false);
         
         // ❌ DO NOT FIT (this was breaking everything)
@@ -141,12 +145,9 @@ public class EditorView extends BorderPane {
         preview.setOnDrawEnd(() -> scroll.setPannable(true));
         preview.setTool(PdfPreviewPane.Tool.NONE);
 
-        ScrollPane toolbarScroll = new ScrollPane(toolbar);
-        toolbarScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-        toolbarScroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-        toolbarScroll.setFitToHeight(true);
+        
 
-        VBox center = new VBox(toolbarScroll, scroll);
+        VBox center = new VBox(toolbar, scroll);
         VBox.setVgrow(scroll, Priority.ALWAYS);
 
         /* ---------------- LOAD FILE ---------------- */
@@ -157,6 +158,7 @@ public class EditorView extends BorderPane {
 
         mainSplit.setDividerPositions(0.15,0.80);
 
+        mainSplit.setStyle("-fx-background-color: transparent;");
         setCenter(mainSplit);
         
         
@@ -204,20 +206,23 @@ public class EditorView extends BorderPane {
     private VBox buildWordPanel(){
 
         VBox panel = new VBox(10);
-
+        panel.getStyleClass().add("card");
         panel.setPadding(new Insets(10));
         panel.setPrefWidth(200);
 
         Label title = new Label("Words to redact");
 
-        Button addWordBtn = new Button("Add");
+        Button addWordBtn = new Button("+");
+        Button removeWordBtn = new Button("-");
         Button scanBtn = new Button("Scan Words");
 
-        HBox inputRow = new HBox(5,wordInput,addWordBtn);
+        HBox inputRow = new HBox(5,wordInput,addWordBtn,removeWordBtn);
 
         wordListView.setPrefHeight(200);
 
         addWordBtn.setOnAction(e -> addWord());
+        
+        removeWordBtn.setOnAction(e -> removeSelectedWord());
 
         scanBtn.setOnAction(e -> scanWords());
         
@@ -253,7 +258,7 @@ public class EditorView extends BorderPane {
         panel.getChildren().add(toolsBox);
         
      // ✅ LIVE SEARCH
-      /*  wordInput.textProperty().addListener((obs, old, val) -> {
+      /*wordInput.textProperty().addListener((obs, old, val) -> {
 
             if(val == null || val.trim().isEmpty()){
                 wordPlans.clear();
@@ -263,8 +268,8 @@ public class EditorView extends BorderPane {
 
             // 🔥 ONLY live preview (DO NOT TOUCH wordList)
             scanWordsLive(val.trim());
-        });
-*/        panel.getChildren().addAll(
+        }); */
+        panel.getChildren().addAll(
                 title,
                 inputRow,
                 wordListView,
@@ -292,7 +297,20 @@ public class EditorView extends BorderPane {
         // 🔥 OPTIONAL: auto-scan after adding
         scanWords();
     }
+    
+    private void removeSelectedWord(){
 
+        String selected = wordListView.getSelectionModel().getSelectedItem();
+
+        if(selected == null) return;
+
+        wordList.remove(selected);
+        wordListView.getItems().remove(selected);
+
+        // 🔥 re-scan after removal
+        scanWords();
+    }
+    
     /* ================= SCAN WORDS ================= */
 
     private void scanWords(){
@@ -391,7 +409,18 @@ public class EditorView extends BorderPane {
                                     List<com.yourfamily.pdf.secure_pdf_converter.core.redaction.ocr.OcrWord> merged =
                                             new ArrayList<>(ocrWords);
 
-                                    merged.addAll(textWords);
+                                    Set<String> seen = new HashSet<>();
+
+                                    for(var w : merged){
+                                        seen.add(w.text() + "_" + w.x() + "_" + w.y());
+                                    }
+
+                                    for(var w : textWords){
+                                        String key = w.text() + "_" + w.x() + "_" + w.y();
+                                        if(!seen.contains(key)){
+                                            merged.add(w);
+                                        }
+                                    }
 
                                     return merged;
 
@@ -418,8 +447,17 @@ public class EditorView extends BorderPane {
 
                         for(String cleanTarget : cleanTargets){
 
-                            // 🔥 STRONG MATCH LOGIC (RESTORED)
-                            if(cleanWord.contains(cleanTarget)){
+                        	int dist = levenshteinDistance(cleanWord, cleanTarget);
+
+                        	double similarity = 1.0 - ((double) dist / cleanTarget.length());
+
+                        	if (
+                        	    // ✅ EXACT match always allowed (even short words)
+                        	    cleanWord.equals(cleanTarget)
+
+                        	    // ✅ Fuzzy ONLY for longer words
+                        	    || (cleanTarget.length() >= 5 && similarity >= 0.8)
+                        	){
 
                                 long key =
                                         (((long) page) << 32) |
@@ -500,7 +538,7 @@ public class EditorView extends BorderPane {
     private void loadFile(File file){
 
         try{
-
+        	ocrCache.clear(); // 🔥 prevent memory leak
             DocumentLoader loader = new DocumentLoader();
 
             document = loader.load(file.toPath());
@@ -510,7 +548,7 @@ public class EditorView extends BorderPane {
             pageCount = document.forRenderingOnly().getNumberOfPages();
 
             sidebar = new ThumbnailSidebar(renderer,pageCount,this::renderPage);
-
+            sidebar.getStyleClass().add("card");
             renderPage(0);
 
         }catch(Exception ex){
@@ -630,6 +668,13 @@ public class EditorView extends BorderPane {
             preview.getShapes().add(s);
 
             preview.getOverlay().getChildren().add(s);
+
+         // 🔥 ALSO RESTORE HANDLES
+         if(s.getUserData() instanceof List<?> handles){
+             for(Object h : handles){
+                 preview.getOverlay().getChildren().add((Node) h);
+             }
+         }
         }
     }
 
@@ -663,7 +708,20 @@ public class EditorView extends BorderPane {
             r.setPickOnBounds(false); // 🔥 THIS IS THE MAGIC LINE
 
             r.setOnMouseClicked(e -> {
-                overlay.getChildren().remove(r);
+
+                if(e.isSecondaryButtonDown()){ // right click
+
+                    overlay.getChildren().remove(r);
+
+                    wordPlans.removeIf(plan ->
+                        plan.pageIndex() == page &&
+                        Math.abs(plan.pdfX() - p.pdfX()) < 1 &&
+                        Math.abs(plan.pdfY() - p.pdfY()) < 1
+                    );
+
+                    detectionLabel.setText("Matches: " + wordPlans.size());
+                }
+
                 e.consume();
             });
 
@@ -712,7 +770,7 @@ public class EditorView extends BorderPane {
                     }
                     else if(shape instanceof Path p){
 
-                        var b = p.getBoundsInLocal();
+                        var b = p.getBoundsInParent();
 
                         x = b.getMinX() + p.getLayoutX();
                         y = b.getMinY() + p.getLayoutY();
