@@ -5,11 +5,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.yourfamily.pdf.secure_pdf_converter.core.conversion.ConversionRouter;
+import com.yourfamily.pdf.secure_pdf_converter.core.tools.ToolHealthChecker;
+import com.yourfamily.pdf.secure_pdf_converter.core.tools.ToolSettings;
 
 import javafx.application.Platform;
 import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
@@ -27,6 +30,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Popup;
+import javafx.stage.Stage;
 
 public class ConversionView extends BorderPane {
 
@@ -62,7 +66,21 @@ public class ConversionView extends BorderPane {
         HBox.setHgrow(rightSpacer, Priority.ALWAYS);
 
         StackPane conversionGuide = buildConversionGuide();
-        HBox topBar = new HBox(20, backBtn, leftSpacer, conversionGuide, rightSpacer);
+        Button toolsStatusBtn = new Button("🔧 Tools");
+
+	     // 🎨 COLOR LOGIC
+	     String overallStatus = ToolHealthChecker.getOverallStatus();
+	
+	     switch (overallStatus) {
+	         case "GOOD" -> toolsStatusBtn.setStyle("-fx-background-color: green;");
+	         case "WARN" -> toolsStatusBtn.setStyle("-fx-background-color: orange;");
+	         case "BAD"  -> toolsStatusBtn.setStyle("-fx-background-color: red;");
+	     }
+	
+	     // 👉 CLICK HANDLER
+	     toolsStatusBtn.setOnAction(e -> showToolsPopup());
+	
+	     HBox topBar = new HBox(20, backBtn, leftSpacer, conversionGuide, toolsStatusBtn, rightSpacer);
         topBar.setAlignment(Pos.CENTER_LEFT);
         topBar.setPadding(new Insets(0, 0, 20, 0));
 
@@ -165,9 +183,7 @@ public class ConversionView extends BorderPane {
         setCenter(centerSplit);
 
         enableDragDrop();
-        System.out.println(
-        	    ConversionRouter.findConversionPath("docx", "xlsx")
-        	);
+        
         if (initialFile != null) {
             fileList.getItems().add(initialFile);
         }
@@ -615,6 +631,78 @@ public class ConversionView extends BorderPane {
                 conversionPopup.hide();
             }
         });
+    }
+    
+    private void showToolsPopup() {
+
+        Stage popup = new Stage();
+        popup.setTitle("Tools Health Check");
+
+        VBox root = new VBox(10);
+        root.setStyle("-fx-padding: 15;");
+
+        var status = ToolHealthChecker.checkAllDetailed();
+
+        status.forEach((tool, result) -> {
+
+            HBox row = new HBox(10);
+
+            CheckBox box = new CheckBox(tool + " - " + result);
+
+            if (result.startsWith("✅")) {
+                box.setStyle("-fx-text-fill: green;");
+                box.setSelected(true);
+            } else if (result.startsWith("⚠")) {
+                box.setStyle("-fx-text-fill: orange;");
+            } else {
+                box.setStyle("-fx-text-fill: red;");
+            }
+
+            box.setDisable(true);
+
+            row.getChildren().add(box);
+
+            // 🔥 ADD FIX BUTTON IF NOT OK
+            if (!result.startsWith("✅")) {
+
+                Button fixBtn = new Button("Fix");
+
+                fixBtn.setOnAction(e -> {
+
+                    FileChooser fc = new FileChooser();
+                    fc.setTitle("Locate " + tool);
+
+                    File file = fc.showOpenDialog(null);
+
+                    if (file != null) {
+
+                        // 🔥 save path (you must have ToolSettings class)
+                        ToolSettings.set(tool.toLowerCase(), file.getAbsolutePath());
+
+                        popup.close();
+                        showToolsPopup(); // refresh
+                    }
+                });
+
+                row.getChildren().add(fixBtn);
+            }
+
+            root.getChildren().add(row);
+        });
+
+        // 🔥 REFRESH BUTTON
+        Button refresh = new Button("Refresh");
+
+        refresh.setOnAction(e -> {
+            popup.close();
+            showToolsPopup();
+        });
+
+        root.getChildren().add(refresh);
+
+        Scene scene = new Scene(root, 400, 300);
+        popup.setScene(scene);
+        popup.show();
     }
     
     private String safeExt(File file) {

@@ -4,8 +4,11 @@ import net.sourceforge.tess4j.*;
 import net.sourceforge.tess4j.Word;
 
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.yourfamily.pdf.secure_pdf_converter.core.tools.AppPaths;
 
 public class OcrWordEngine {
 
@@ -15,7 +18,9 @@ public class OcrWordEngine {
         tesseract = new Tesseract();
 
         // 🔥 SET YOUR tessdata path
-        tesseract.setDatapath("C:/Users/soodk/AppData/Local/Programs/Tesseract-OCR/tessdata");
+        tesseract.setDatapath(
+        		new File(AppPaths.toolsDir(), "tesseract/tessdata").getAbsolutePath()
+        	);
 
         // optional (better accuracy)
         tesseract.setLanguage("eng");

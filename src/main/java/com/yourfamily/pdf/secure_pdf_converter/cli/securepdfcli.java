@@ -6,6 +6,9 @@ import java.util.List;
 import java.util.Map;
 
 import com.yourfamily.pdf.secure_pdf_converter.core.conversion.ConversionRouter;
+import com.yourfamily.pdf.secure_pdf_converter.core.tools.ToolHealthChecker;
+
+
 
 public final class securepdfcli {
 
@@ -99,7 +102,7 @@ public final class securepdfcli {
                 System.out.println("❌ Output file not found after conversion");
             }
            
-
+            
         } catch (Exception e) {
             System.err.println("Conversion failed: " + e.getMessage());
         }
@@ -290,6 +293,27 @@ public final class securepdfcli {
     }
 
     private static void printHelp() {
+    	
+    	System.out.println("""
+    			
+    			   _____                             ____  ____  ______
+    			   / ___/___  _______  ________     / __ \\/ __ \\/ ____/
+    			   \\__ \\/ _ \\/ ___/ / / / ___/ _   / /_/ / / / / /_
+    			  ___/ /  __/ /__/ /_/ / /  /  __// ____/ /_/ / __/
+    			 /____/\\___/\\___/\\__,_/_/   \\___//_/   /_____/_/		
+    			
+    			 			
+    			""");
+    	
+    	
+    	System.out.println("\n🔧 TOOL STATUS");
+    	System.out.println("----------------");
+
+    	ToolHealthChecker.checkAllDetailed().forEach((tool, result) -> {
+    	    System.out.println("  " + tool + " → " + result);
+    	});
+
+    	System.out.println();
 
         System.out.println("""
         		
@@ -309,11 +333,7 @@ public final class securepdfcli {
 		⣿⣿⣿⡟⠄⠄⠄⠄⠄⠋⢀⣼⣿⣿⣿⣿⣿⣿⣿⣶⣦⣀⢟⣻⣿⣿⣿⣿⣿⣿⣿⣿
 		⣿⣿⣿⡆⠆⠄⠠⡀⡀⠄⣽⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
 		⣿⣿⡿⡅⠄⠄⢀⡰⠂⣼⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
-   _____                             ____  ____  ______
-  / ___/___  _______  ________     / __ \\/ __ \\/ ____/
-  \\__ \\/ _ \\/ ___/ / / / ___/ _   / /_/ / / / / /_
- ___/ /  __/ /__/ /_/ / /  /  __// ____/ /_/ / __/
-/____/\\___/\\___/\\__,_/_/   \\___//_/   /_____/_/
+
 
   Secure PDF Converter
   Local-first private document conversion

@@ -2,18 +2,20 @@ package com.yourfamily.pdf.secure_pdf_converter.core.conversion.pandoc;
 
 import java.io.*;
 
+import com.yourfamily.pdf.secure_pdf_converter.core.tools.ToolPaths;
+
 public final class PandocBridge {
 
     private PandocBridge() {}
 
     public static void convert(File input, File output) {
 
-        ProcessBuilder builder = new ProcessBuilder(
-                "pandoc",
-                input.getAbsolutePath(),
-                "-o",
-                output.getAbsolutePath()
-        );
+    	ProcessBuilder builder = new ProcessBuilder(
+    	        ToolPaths.pandoc(),
+    	        input.getAbsolutePath(),
+    	        "-o",
+    	        output.getAbsolutePath()
+    	);
 
         builder.redirectErrorStream(true);
 
