@@ -15,4 +15,9 @@ dist/
 Thumbs.db
 
 # Optional (generated/test PDFs)
-*.pdf
+*.pdf   
+
+# WiX generated files
+files.wxs
+*.wixobj
+*.wixpdb

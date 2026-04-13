@@ -3,7 +3,7 @@ package com.yourfamily.pdf.secure_pdf_converter.ui;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-
+import com.yourfamily.pdf.secure_pdf_converter.core.update.UpdateChecker;
 import java.io.File;
 
 public class MainWindow extends Application {
@@ -16,9 +16,10 @@ public class MainWindow extends Application {
         this.primaryStage = stage;
 
         showLanding();
-
-        stage.setTitle("Secure PDF Studio");
-        stage.setWidth(980);
+     // 🔥 ADD THIS LINE RIGHT HERE
+        UpdateChecker.check();
+        stage.setTitle("Kovert");
+        stage.setWidth(1080);
         stage.setHeight(720);
         stage.show();
     }
