@@ -1,6 +1,7 @@
 # Maven
 target/
 tools/
+dist/
 # Eclipse
 .classpath
 .project

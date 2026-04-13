@@ -306,15 +306,15 @@ public final class securepdfcli {
     			""");
     	
     	
-    	System.out.println("\n🔧 TOOL STATUS");
+    /*	tools status for cli - did not work
+        System.out.println("\n🔧 TOOL STATUS");
     	System.out.println("----------------");
 
     	ToolHealthChecker.checkAllDetailed().forEach((tool, result) -> {
     	    System.out.println("  " + tool + " → " + result);
     	});
 
-    	System.out.println();
-
+    	System.out.println(); */ 
         System.out.println("""
         		
         		

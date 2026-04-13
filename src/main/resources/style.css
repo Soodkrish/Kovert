@@ -215,3 +215,15 @@
     -fx-font-family: "Consolas";
     -fx-font-size: 13px;
 }
+
+.chip {
+    -fx-background-color: #21262d;
+    -fx-text-fill: #c9d1d9;
+    -fx-padding: 4 10;
+    -fx-background-radius: 20;
+}
+
+.chip:hover {
+    -fx-background-color: #58a6ff;
+    -fx-text-fill: white;
+}
