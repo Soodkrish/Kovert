@@ -1,6 +1,9 @@
 # Maven
 target/
-
+tools/
+dist/
+app/
+runtime/
 # Eclipse
 .classpath
 .project
@@ -14,4 +17,11 @@ target/
 Thumbs.db
 
 # Optional (generated/test PDFs)
-*.pdf
+*.pdf   
+
+# WiX generated files
+files.wxs
+*.wixobj
+*.wixpdb
+
+*.msi

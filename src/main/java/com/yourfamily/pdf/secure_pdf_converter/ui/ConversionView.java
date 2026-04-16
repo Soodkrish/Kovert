@@ -2,23 +2,35 @@ package com.yourfamily.pdf.secure_pdf_converter.ui;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.yourfamily.pdf.secure_pdf_converter.core.conversion.ConversionRouter;
+import com.yourfamily.pdf.secure_pdf_converter.core.tools.ToolHealthChecker;
+import com.yourfamily.pdf.secure_pdf_converter.core.tools.ToolSettings;
 
+import javafx.animation.FadeTransition;
+import javafx.animation.ScaleTransition;
 import javafx.application.Platform;
+import javafx.concurrent.Task;
 import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TextField;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -27,6 +39,8 @@ import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Popup;
+import javafx.stage.Stage;
+import javafx.util.Duration;
 
 public class ConversionView extends BorderPane {
 
@@ -38,9 +52,9 @@ public class ConversionView extends BorderPane {
     private final VBox dropZone = new VBox();
     private final Popup conversionPopup = new Popup();
     private final VBox conversionPopupContent = new VBox(8);
-
+    private final Map<File, String> perFileMap = new HashMap<>();
     private final CheckBox batchFolderMode = new CheckBox("Batch convert entire folder");
-    private final ComboBox<String> perFileFormat = new ComboBox<>();
+    private final CheckBox perFileMode = new CheckBox("Per-file format selection");
 
     public ConversionView(MainWindow app, File initialFile) {
 
@@ -62,7 +76,21 @@ public class ConversionView extends BorderPane {
         HBox.setHgrow(rightSpacer, Priority.ALWAYS);
 
         StackPane conversionGuide = buildConversionGuide();
-        HBox topBar = new HBox(20, backBtn, leftSpacer, conversionGuide, rightSpacer);
+        Button toolsStatusBtn = new Button("🔧 Tools");
+
+	     // 🎨 COLOR LOGIC
+	     String overallStatus = ToolHealthChecker.getOverallStatus();
+	
+	     switch (overallStatus) {
+	         case "GOOD" -> toolsStatusBtn.setStyle("-fx-background-color: green;");
+	         case "WARN" -> toolsStatusBtn.setStyle("-fx-background-color: orange;");
+	         case "BAD"  -> toolsStatusBtn.setStyle("-fx-background-color: red;");
+	     }
+	
+	     // 👉 CLICK HANDLER
+	     toolsStatusBtn.setOnAction(e -> showToolsPopup());
+	
+	     HBox topBar = new HBox(20, backBtn, leftSpacer, conversionGuide, toolsStatusBtn, rightSpacer);
         topBar.setAlignment(Pos.CENTER_LEFT);
         topBar.setPadding(new Insets(0, 0, 20, 0));
 
@@ -107,28 +135,30 @@ public class ConversionView extends BorderPane {
                 "pptx",
                 "html",
                 "txt",
-                "tiff",
                 "webp"
         );
         formatBox.setValue("pdf");
+        formatBox.setOnAction(e -> {
+
+            if (!perFileMode.isSelected()) return;
+
+            String global = formatBox.getValue();
+
+            fileList.getItems().forEach(file -> {
+                if (!perFileMap.containsKey(file)) {
+                    perFileMap.put(file, global);
+                }
+            });
+            fileList.setStyle("""
+            	    -fx-control-inner-background: #0d1117;
+            	    -fx-background-color: #0d1117;
+            	""");
+            fileList.refresh();
+        });
         formatBox.setMaxWidth(Double.MAX_VALUE);
 
-        perFileFormat.getItems().addAll(
-                "auto",
-                "pdf",
-                "png",
-                "jpg",
-                "jpeg",
-                "docx",
-                "xlsx",
-                "pptx",
-                "html",
-                "txt",
-                "tiff",
-                "webp"
-        );
-        perFileFormat.setValue("auto");
-
+                
+      
         Button browseFolder = new Button("Browse...");
         browseFolder.setOnAction(e -> chooseFolder());
 
@@ -149,7 +179,7 @@ public class ConversionView extends BorderPane {
                 new Label("Global Output Format"),
                 formatBox,
                 new Label("Per-File Override"),
-                perFileFormat,
+                perFileMode,
                 new Label("Save Destination"),
                 folderBox,
                 progressBar,
@@ -165,16 +195,107 @@ public class ConversionView extends BorderPane {
         setCenter(centerSplit);
 
         enableDragDrop();
-        System.out.println(
-        	    ConversionRouter.findConversionPath("docx", "xlsx")
-        	);
+        
+        fileList.setCellFactory(list -> new ListCell<>() {
+
+            private final HBox row = new HBox(10);
+            private final Label name = new Label();
+            
+            private final ComboBox<String> formatSelector = new ComboBox<>();
+
+            {
+                formatSelector.getItems().addAll(
+                    "pdf","png","jpg","jpeg","docx","xlsx","pptx","html","txt","webp"
+                );
+                
+                name.setStyle("""
+                	    -fx-text-fill: #e6edf3;
+                	    -fx-font-size: 13px;
+                	""");
+                
+                
+                formatSelector.setPrefWidth(110);
+
+                row.getChildren().addAll(name, formatSelector);
+                HBox.setHgrow(name, Priority.ALWAYS);
+
+                row.setStyle("""
+                	    -fx-padding:10;
+                	    -fx-background-color:#0d1117;
+                	    -fx-border-color:#30363d;
+                	    -fx-border-width:0 0 1 0;
+                	""");
+            }
+            
+            @Override
+            protected void updateItem(File file, boolean empty) {
+                super.updateItem(file, empty);
+
+                if (empty || file == null) {
+                    setGraphic(null);
+                    return;
+                }
+
+                name.setText(file.getName());
+                name.setStyle("""
+                	    -fx-text-fill: #e6edf3;
+                	    -fx-font-size: 13px;
+                	    -fx-font-weight: 500;
+                	""");
+                boolean enabled = perFileMode.isSelected();
+
+                row.getChildren().clear();
+
+                if (enabled) {
+                    row.getChildren().addAll(name, formatSelector);
+                } else {
+                    row.getChildren().add(name);
+                }
+
+                if (enabled) {
+
+                    String saved = perFileMap.get(file);
+
+                    if (saved != null) {
+                        formatSelector.setValue(saved);
+                    } else {
+                        String global = ConversionView.this.formatBox.getValue();
+                        formatSelector.setValue(global);
+                        perFileMap.put(file, global);
+                    }
+                }
+
+                formatSelector.setPrefWidth(110);
+
+             // ✅ Define the action ONCE per cell, not every time it updates.
+             formatSelector.setOnAction(e -> {
+                 File currentFile = getItem();
+                 if (currentFile != null) {
+                     perFileMap.put(currentFile, formatSelector.getValue());
+                 }
+             });
+          // Store the default style so we can restore it accurately
+             String defaultStyle = "-fx-padding:10; -fx-background-color:#0d1117; -fx-border-color:#30363d; -fx-border-width:0 0 1 0;";
+             String hoverStyle = "-fx-padding:10; -fx-background-color:#21262d; -fx-border-color:#30363d; -fx-border-width:0 0 1 0;";
+
+             row.setOnMouseEntered(e -> row.setStyle(hoverStyle));
+             row.setOnMouseExited(e -> row.setStyle(defaultStyle));
+                setGraphic(row);
+            }
+            
+        }); 
+        
+        perFileMode.setOnAction(e -> {
+            fileList.refresh();
+        });
+        
         if (initialFile != null) {
             fileList.getItems().add(initialFile);
         }
         Label privacy = new Label(
         	    "🔒 All processing is local. No uploads. No tracking."
         	);
-
+        
         	privacy.setStyle("-fx-text-fill:#8b949e;");
         	setBottom(privacy);
         	
@@ -269,112 +390,139 @@ public class ConversionView extends BorderPane {
 
     private void startConversion() {
 
+        // 1. Snapshot data
         List<File> files = new ArrayList<>(fileList.getItems());
-
-        if (files.isEmpty()) {
-            statusLabel.setText("No files selected.");
-            return;
-        }
-
-        if (outputFolder.getText().isEmpty()) {
-            statusLabel.setText("Select output folder.");
-            return;
-        }
-
         String globalFormat = formatBox.getValue();
-        File outputDir = new File(outputFolder.getText());
+        String outputDirPath = outputFolder.getText();
 
-        progressBar.setVisible(true);
-        progressBar.setProgress(0);
+        if (files.isEmpty() || outputDirPath.isEmpty()) {
+            statusLabel.setStyle("-fx-text-fill: #ff7b72;");
+            statusLabel.setText("❌ Error: Select files and a destination.");
+            return;
+        }
 
-        new Thread(() -> {
-            try {
+        File outputDir = new File(outputDirPath);
+
+        // 2. Task
+        Task<Void> conversionTask = new Task<>() {
+
+            @Override
+            protected Void call() throws Exception {
+
                 int total = files.size();
                 int count = 0;
+                List<String> skippedFiles = new ArrayList<>();
 
                 for (File file : files) {
+
+                    if (isCancelled()) break;
                     count++;
 
-                    String format = perFileFormat.getValue().equals("auto")
-                            ? globalFormat
-                            : perFileFormat.getValue();
-                    
-                    String from = file.getName()
-                            .substring(file.getName().lastIndexOf('.') + 1);
+                    String format = perFileMode.isSelected()
+                            ? perFileMap.getOrDefault(file, globalFormat)
+                            : globalFormat;
+
+                    String from = safeExt(file);
+
+                    // ⚠ Unknown extension
+                    if (from.isEmpty()) {
+                        updateMessage("⚠ Skipping (No Ext): " + file.getName());
+                        updateProgress(count, total);
+                        continue;
+                    }
 
                     List<String> path = ConversionRouter.findConversionPath(from, format);
 
+                    // 🔍 Multi-step path
                     if (path.size() > 2) {
-                        Platform.runLater(() ->
-                            statusLabel.setText("⚠ Indirect: " + String.join(" → ", path))
-                        );
+                        updateMessage("🔍 Complex Path: " + String.join(" → ", path));
+                        Thread.sleep(300);
 
-                        Thread.sleep(1200); // small delay so user sees it
+                        for (int i = 0; i < path.size() - 1; i++) {
+                            updateMessage("🛠 Step " + (i + 1) + "/" + (path.size() - 1)
+                                    + ": " + path.get(i).toUpperCase());
+                            Thread.sleep(200);
+                        }
                     }
-                    Platform.runLater(() ->
-                            statusLabel.setText("Converting: " + file.getName()));
 
-                    
+                    // ⚡ Skip same format
+                    if (from.equals(format)) {
+                        skippedFiles.add(file.getName());
+                        updateProgress(count, total);
+                        continue;
+                    }
 
-                 // 🔥 prevent useless conversion
-                 if (from.equals(format)) {
-                     Platform.runLater(() ->
-                         statusLabel.setText("⚠ Already in " + format.toUpperCase())
-                     );
-                     continue;
-                 }
+                    // ⏳ Processing
+                    updateMessage("⏳ Processing: " + file.getName());
 
-                 // 🔥 show steps
-                 if (path.size() > 2) {
+                    String outputPath = buildOutputPath(file, outputDir, format);
 
-                     for (int i = 0; i < path.size() - 1; i++) {
+                    File result = ConversionRouter.smartConvert(file, from, format, outputPath);
 
-                         String stepFrom = path.get(i);
-                         String stepTo = path.get(i + 1);
-                         int stepNum = i + 1;
-                         int totalSteps = path.size() - 1;
+                    updateMessage("✅ Saved: " + result.getName());
 
-                         Platform.runLater(() ->
-                             statusLabel.setText("Step " + stepNum + "/" + totalSteps +
-                                     ": " + stepFrom.toUpperCase() + " → " + stepTo.toUpperCase())
-                         );
-
-                         try {
-                             Thread.sleep(700);
-                         } catch (InterruptedException ignored) {}
-                     }
-                 }
-
-                 // 🔥 actual conversion
-                 String outputPath = buildOutputPath(file, outputDir, format);
-
-                 File result = ConversionRouter.smartConvert(
-                         file,
-                         from,
-                         format,
-                         outputPath
-                 );
-                 System.out.println("UI EXPECTED PATH: " + outputPath);
-                 // 🔥 show final path
-                 Platform.runLater(() ->
-                     statusLabel.setText("✅ Saved: " + result.getAbsolutePath())
-                 );
-
-                    double progress = (double) count / total;
-                    Platform.runLater(() -> progressBar.setProgress(progress));
-                    
-
+                    updateProgress(count, total);
                 }
 
-                Platform.runLater(() -> statusLabel.setText("Conversion complete"));
-                
+                // 🔥 FINAL MESSAGE (THIS IS THE ONE THAT MATTERS)
+                if (!skippedFiles.isEmpty()) {
 
-            } catch (Exception e) {
-                Platform.runLater(() ->
-                        statusLabel.setText("Failed: " + e.getMessage()));
+                    if (skippedFiles.size() == 1) {
+                        updateMessage("🤨 " + skippedFiles.get(0) + " was already perfect. I did nothing.");
+                    } else {
+                        updateMessage("😂 " + skippedFiles.size() + " files were already perfect... I respect the confidence.");
+                    }
+
+                } else {
+                    updateMessage("🎉 All " + total + " files converted successfully.");
+                }
+
+                return null;
+            }
+
+            @Override
+            protected void succeeded() {
+                super.succeeded();
+
+                // 🔥 DO NOT override message — ONLY style it
+                statusLabel.textProperty().unbind();
+                statusLabel.setStyle("-fx-text-fill: #58a6ff; -fx-font-weight: bold;");
+            }
+
+            @Override
+            protected void failed() {
+                super.failed();
+
+                Throwable e = getException();
+
+                statusLabel.textProperty().unbind();
+                statusLabel.setStyle("-fx-text-fill: #ff7b72;");
+                statusLabel.setText("❌ Error: " + e.getMessage());
+
                 e.printStackTrace();
             }
-        }).start();
+        };
+
+        // 3. Bind UI
+        progressBar.setVisible(true);
+
+        statusLabel.textProperty().unbind();
+        statusLabel.textProperty().bind(conversionTask.messageProperty());
+
+        progressBar.progressProperty().unbind();
+        progressBar.progressProperty().bind(conversionTask.progressProperty());
+
+        // 4. Cancel handling
+        conversionTask.setOnCancelled(e -> {
+            statusLabel.textProperty().unbind();
+            statusLabel.setStyle("-fx-text-fill: #f2cc60;");
+            statusLabel.setText("⛔ Conversion cancelled");
+        });
+
+        // 5. Run
+        Thread thread = new Thread(conversionTask);
+        thread.setDaemon(true);
+        thread.start();
     }
 
     private StackPane buildConversionGuide() {
@@ -417,36 +565,150 @@ public class ConversionView extends BorderPane {
         return wrapper;
     }
     
-    private VBox buildConversionMatrix(){
+    private VBox buildConversionMatrix() {
 
-        VBox container = new VBox(18);
+        VBox container = new VBox(16);
         container.setPadding(new Insets(16));
-        container.setPrefWidth(300);
+        container.setPrefWidth(700);
+        container.setPrefHeight(500);
 
-        Label header = new Label("⚡ Supported Conversions");
-        header.setStyle("""
-            -fx-text-fill:white;
-            -fx-font-size:16px;
-            -fx-font-weight:bold;
-        """);
+        // =========================
+        // 🔥 DETECT INPUT FORMATS
+        // =========================
+        Set<String> detected = fileList.getItems()
+                .stream()
+                .map(this::safeExt)
+                .collect(Collectors.toSet());
 
-        Label sub = new Label("Click to select output format");
-        sub.setStyle("-fx-text-fill:#8b949e;");
+        // =========================
+        // 🔥 HEADER (SMART UI)
+        // =========================
+        VBox header = new VBox(6);
 
-        container.getChildren().addAll(header, sub);
+        Label title = new Label("⚡ Smart Conversions");
+        title.setStyle("-fx-text-fill:white; -fx-font-size:18px; -fx-font-weight:bold;");
 
-        // 🔥 DYNAMIC DATA FROM ROUTER
-        var routes = ConversionRouter.getSupportedRoutes();
+        Label subtitle = new Label("Based on your selected files");
+        subtitle.setStyle("-fx-text-fill:#8b949e;");
 
-        routes.forEach((source, targets) -> {
-            container.getChildren().add(createAdvancedCard(source, targets));
+        HBox detectedRow = new HBox(6);
+
+        for (String d : detected) {
+            Label chip = new Label(d.toUpperCase());
+            chip.setStyle("""
+                -fx-background-color:#30363d;
+                -fx-text-fill:white;
+                -fx-padding:4 10;
+                -fx-background-radius:20;
+            """);
+            detectedRow.getChildren().add(chip);
+        }
+
+        header.getChildren().addAll(title, subtitle, detectedRow);
+
+        // 🔥 SMART MODE BANNER
+        if (detected.size() > 1) {
+            Label smart = new Label("⚡ Mixed files detected — choosee formats per file");
+            smart.setStyle("-fx-text-fill:#58a6ff;");
+            header.getChildren().add(smart);
+        }
+
+        // =========================
+        // 🔍 SEARCH BAR
+        // =========================
+        TextField search = new TextField();
+        search.setPromptText("Search conversions (pdf, docx...)");
+
+        // =========================
+        // 🧠 GRID (MAIN UI)
+        // =========================
+        GridPane grid = new GridPane();
+        grid.setHgap(30);
+        grid.setVgap(20);
+
+        // Build initial grid
+        buildGridContent(grid, detected, "");
+
+        // 🔍 SEARCH FILTER LOGIC
+        search.textProperty().addListener((obs, oldVal, val) -> {
+            buildGridContent(grid, detected, val.toLowerCase());
         });
+
+        container.getChildren().addAll(header, search, grid);
 
         return container;
     }
+    	
+    private void buildGridContent(GridPane grid, Set<String> detected, String filter) {
+
+        grid.getChildren().clear();
+
+        // 📄 DOCUMENTS
+        VBox documents = createCategory("📄 Documents",
+                Map.of(
+                        "pdf", List.of("docx", "xlsx", "pptx"),
+                        "docx", List.of("pdf", "html", "txt"),
+                        "xlsx", List.of("pdf"),
+                        "pptx", List.of("pdf")
+                ),
+                detected,
+                filter
+        );
+
+        // 🖼 IMAGES
+        VBox images = createCategory("🖼 Images",
+                Map.of(
+                        "pdf", List.of("png", "jpg"),
+                        "png", List.of("pdf", "jpg", "webp", "svg"),
+                        "jpg", List.of("pdf", "png"),
+                        "webp", List.of("png")
+                ),
+                detected,
+                filter
+        );
+
+        // 🌐 WEB / TEXT
+        VBox web = createCategory("🌐 Web & Text",
+                Map.of(
+                        "html", List.of("pdf", "docx"),
+                        "md", List.of("pdf"),
+                        "docx", List.of("html", "txt")
+                ),
+                detected,
+                filter
+        );
+
+        grid.add(documents, 0, 0);
+        grid.add(images, 1, 0);
+        grid.add(web, 2, 0);
+    }
     
-    
-    
+    private VBox createCategory(String titleText,
+            Map<String, List<String>> data,
+            Set<String> detected,
+            String filter) {
+
+	Label title = new Label(titleText);
+	title.setStyle("-fx-text-fill:white; -fx-font-size:14px; -fx-font-weight:bold;");
+	
+	VBox box = new VBox(10);
+	box.getChildren().add(title);
+	
+	data.forEach((source, targets) -> {
+	
+	// 🔍 FILTER LOGIC
+	boolean matches = filter.isEmpty()
+	|| source.contains(filter)
+	|| targets.stream().anyMatch(t -> t.contains(filter));
+	
+	if (matches) {
+	box.getChildren().add(createRow(source, targets, detected));
+	}
+	});
+	
+	return box;
+	}
+	    
     private String getIcon(String type){
 
         return switch(type.toLowerCase()){
@@ -459,76 +721,60 @@ public class ConversionView extends BorderPane {
         };
     }
     
-    private VBox createAdvancedCard(String source, List<String> targets){
+    private VBox createRow(String source, List<String> targets, Set<String> detected) {
 
         Label title = new Label(getIcon(source) + " " + source.toUpperCase());
-        title.setStyle("""
-            -fx-text-fill:white;
-            -fx-font-size:13px;
-            -fx-font-weight:bold;
-        """);
+        title.setStyle("-fx-text-fill:white; -fx-font-weight:bold;");
 
-        HBox formatsRow = new HBox(6);
+        HBox outputs = new HBox(6);
 
-        for(String t : targets){
+        for (String t : targets) {
 
             Label chip = new Label(t.toUpperCase());
-            chip.setStyle("""
-                -fx-background-color:#21262d;
-                -fx-text-fill:#c9d1d9;
-                -fx-padding:3 8;
-                -fx-background-radius:6;
-            """);
+            chip.getStyleClass().add("chip");
 
-            chip.setOnMouseEntered(e -> chip.setStyle("""
-                -fx-background-color:#30363d;
-                -fx-text-fill:white;
-                -fx-padding:3 8;
-                -fx-background-radius:6;
-            """));
-
-            chip.setOnMouseExited(e -> chip.setStyle("""
-                -fx-background-color:#21262d;
-                -fx-text-fill:#c9d1d9;
-                -fx-padding:3 8;
-                -fx-background-radius:6;
-            """));
-
-            // 🔥 CLICK = SELECT FORMAT
             chip.setOnMouseClicked(e -> {
-                formatBox.setValue(t.toLowerCase());
-                statusLabel.setText("Selected: " + source + " → " + t);
+                formatBox.setValue(t);
+                statusLabel.setText("Convert " + source + " → " + t);
                 conversionPopup.hide();
             });
 
-            formatsRow.getChildren().add(chip);
+            outputs.getChildren().add(chip);
         }
 
-        VBox card = new VBox(8, title, formatsRow);
-        card.setPadding(new Insets(12));
+        VBox row = new VBox(6, title, outputs);
+        row.setPadding(new Insets(10));
 
-        card.setStyle("""
-            -fx-background-color:#161b22;
-            -fx-background-radius:12;
-            -fx-border-radius:12;
-            -fx-border-color:#30363d;
-        """);
+        // 🔥 SMART HIGHLIGHT
+        if (detected.contains(source)) {
+            row.setStyle("""
+                -fx-background-color:#1f2a35;
+                -fx-border-color:#58a6ff;
+                -fx-border-radius:10;
+                -fx-background-radius:10;
+            """);
+        } else {
+            row.setStyle("""
+                -fx-background-color:#161b22;
+                -fx-border-color:#30363d;
+                -fx-border-radius:10;
+                -fx-background-radius:10;
+            """);
+        }
 
-        card.setOnMouseEntered(e -> card.setStyle("""
+        // ✨ HOVER EFFECT
+             
+        row.setOnMouseEntered(e ->
+        row.setStyle("""
             -fx-background-color:#21262d;
-            -fx-background-radius:12;
-            -fx-border-radius:12;
-            -fx-border-color:#58a6ff;
-        """));
+            -fx-padding:10;
+            -fx-background-radius:8;
+        """)
+    );
 
-        card.setOnMouseExited(e -> card.setStyle("""
-            -fx-background-color:#161b22;
-            -fx-background-radius:12;
-            -fx-border-radius:12;
-            -fx-border-color:#30363d;
-        """));
-
-        return card;
+    
+        
+        return row;
     }
     
     private VBox createCard(String title, String formats){
@@ -587,27 +833,42 @@ public class ConversionView extends BorderPane {
 
     private void showConversionPopup(Button trigger) {
 
-        if (getScene() == null || getScene().getWindow() == null) {
-            return;
-        }
+        if (getScene() == null || getScene().getWindow() == null) return;
 
         Bounds bounds = trigger.localToScreen(trigger.getBoundsInLocal());
-        if (bounds == null) {
-            return;
-        }
+        if (bounds == null) return;
 
         double x = bounds.getMinX() - 40;
         double y = bounds.getMaxY() + 10;
 
         if (!conversionPopup.isShowing()) {
+
+            conversionPopupContent.setOpacity(0);
+            conversionPopupContent.setScaleX(0.95);
+            conversionPopupContent.setScaleY(0.95);
+
             conversionPopup.show(getScene().getWindow(), x, y);
+
+            // 🔥 FADE IN
+            FadeTransition fade = new FadeTransition(Duration.millis(180), conversionPopupContent);
+            fade.setFromValue(0);
+            fade.setToValue(1);
+
+            // 🔥 SCALE IN (premium feel)
+            ScaleTransition scale = new ScaleTransition(Duration.millis(180), conversionPopupContent);
+            scale.setFromX(0.95);
+            scale.setFromY(0.95);
+            scale.setToX(1);
+            scale.setToY(1);
+
+            fade.play();
+            scale.play();
+
             return;
         }
 
-        conversionPopup.setX(x);
-        conversionPopup.setY(y);
+        conversionPopup.hide();
     }
-
     private void hideConversionPopupIfOutside() {
 
         Platform.runLater(() -> {
@@ -615,6 +876,80 @@ public class ConversionView extends BorderPane {
                 conversionPopup.hide();
             }
         });
+    }
+    
+    private void showToolsPopup() {
+
+    	Stage popup = new Stage();
+    	popup.setTitle("Tools Health Check");
+    	// ✅ Forces the user to close this popup before interacting with the main app again
+    	popup.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+
+        VBox root = new VBox(10);
+        root.setStyle("-fx-padding: 15;");
+
+        var status = ToolHealthChecker.checkAllDetailed();
+
+        status.forEach((tool, result) -> {
+
+            HBox row = new HBox(10);
+
+            CheckBox box = new CheckBox(tool + " - " + result);
+
+            if (result.startsWith("✅")) {
+                box.setStyle("-fx-text-fill: green;");
+                box.setSelected(true);
+            } else if (result.startsWith("⚠")) {
+                box.setStyle("-fx-text-fill: orange;");
+            } else {
+                box.setStyle("-fx-text-fill: red;");
+            }
+
+            box.setDisable(true);
+
+            row.getChildren().add(box);
+
+            // 🔥 ADD FIX BUTTON IF NOT OK
+            if (!result.startsWith("✅")) {
+
+                Button fixBtn = new Button("Fix");
+
+                fixBtn.setOnAction(e -> {
+
+                    FileChooser fc = new FileChooser();
+                    fc.setTitle("Locate " + tool);
+
+                    File file = fc.showOpenDialog(null);
+
+                    if (file != null) {
+
+                        // 🔥 save path (you must have ToolSettings class)
+                        ToolSettings.set(tool.toLowerCase(), file.getAbsolutePath());
+
+                        popup.close();
+                        showToolsPopup(); // refresh
+                    }
+                });
+
+                row.getChildren().add(fixBtn);
+            }
+
+            root.getChildren().add(row);
+        });
+
+        // 🔥 REFRESH BUTTON
+        Button refresh = new Button("Refresh");
+
+        refresh.setOnAction(e -> {
+            popup.close();
+            showToolsPopup();
+        });
+
+        root.getChildren().add(refresh);
+
+        Scene scene = new Scene(root, 400, 300);
+        popup.setScene(scene);
+        popup.show();
     }
     
     private String safeExt(File file) {
