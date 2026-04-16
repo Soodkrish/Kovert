@@ -6,148 +6,109 @@
            Language="1033"
            Version="1.0.0"
            Manufacturer="Kovert Inc."
-           UpgradeCode="REPLACE-WITH-YOUR-GUID">
+           UpgradeCode="71460A28-C58F-438D-809D-41A241ABEBB7"> <Package InstallerVersion="500" 
+             Compressed="yes" 
+             InstallScope="perMachine" 
+             InstallPrivileges="elevated" 
+             Platform="x64"/>
 
-    <!-- PACKAGE -->
-    <Package InstallerVersion="500" Compressed="yes" InstallScope="perMachine"/>
     <MediaTemplate EmbedCab="yes"/>
 
-    <!-- 🔥 UPGRADE SYSTEM -->
     <MajorUpgrade AllowDowngrades="no"
-                  DowngradeErrorMessage="A newer version of Kovert is already installed."/>
+                  DowngradeErrorMessage="A newer version is already installed."/>
 
-    <!-- INSTALL DIR -->
+    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLDIR" />
+    <Property Id="ADD_TO_PATH" Value="1" Secure="yes"/>
+    <Property Id="MSIRMSHUTDOWN" Value="1" />
+    <Property Id="MSIFASTINSTALL" Value="1" />
+    <Property Id="WixAppFolder" Value="WixPerMachineFolder" />
+
     <Directory Id="TARGETDIR" Name="SourceDir">
-
-      <Directory Id="ProgramFilesFolder">
+      <Directory Id="ProgramFiles64Folder">
         <Directory Id="INSTALLDIR" Name="Kovert"/>
       </Directory>
-
       <Directory Id="ProgramMenuFolder">
         <Directory Id="AppMenuDir" Name="Kovert"/>
       </Directory>
-
       <Directory Id="DesktopFolder"/>
     </Directory>
 
-    <!-- FEATURES -->
+    <DirectoryRef Id="AppMenuDir">
+      <Component Id="StartMenuShortcut" Guid="*">
+        <Shortcut Id="StartMenuShortcutId" 
+                  Name="Kovert" 
+                  Target="[INSTALLDIR]Kovert.exe" 
+                  WorkingDirectory="INSTALLDIR"/>
+        <RemoveFolder Id="RemoveAppMenuDir" On="uninstall"/>
+        <RegistryValue Root="HKLM" Key="Software\Kovert" Name="StartMenuShortcut" Type="integer" Value="1" KeyPath="yes"/>
+      </Component>
+    </DirectoryRef>
+
+    <DirectoryRef Id="DesktopFolder">
+      <Component Id="DesktopShortcut" Guid="*">
+        <Shortcut Id="DesktopShortcutId" 
+                  Name="Kovert" 
+                  Target="[INSTALLDIR]Kovert.exe" 
+                  WorkingDirectory="INSTALLDIR"/>
+        <RegistryValue Root="HKLM" Key="Software\Kovert" Name="DesktopShortcut" Type="integer" Value="1" KeyPath="yes"/>
+      </Component>
+    </DirectoryRef>
+
+    <DirectoryRef Id="INSTALLDIR">
+      <Component Id="EnvPathSystem" Guid="67530861-5374-422D-9B84-36100E0E080D">
+        <Condition>ADD_TO_PATH = "1"</Condition>
+        <Environment Id="SystemPath" 
+                     Name="PATH" 
+                     Value="[INSTALLDIR]" 
+                     Permanent="no" 
+                     Part="last" 
+                     Action="set" 
+                     System="yes"/>
+        <RegistryValue Root="HKLM" Key="Software\Kovert" Name="PathStatus" Type="string" Value="Success" KeyPath="yes"/>
+      </Component>
+    </DirectoryRef>
+
     <Feature Id="MainFeature" Title="Kovert" Level="1">
       <ComponentGroupRef Id="AppFiles"/>
       <ComponentRef Id="StartMenuShortcut"/>
       <ComponentRef Id="DesktopShortcut"/>
-      <ComponentRef Id="EnvPathComponent"/>
+      <ComponentRef Id="EnvPathSystem"/>
     </Feature>
 
-    <!-- START MENU -->
-    <DirectoryRef Id="AppMenuDir">
-      <Component Id="StartMenuShortcut" Guid="*">
-        <Shortcut Id="StartMenuShortcutId"
-                  Name="Kovert"
-                  Target="[INSTALLDIR]Kovert.exe"
-                  WorkingDirectory="INSTALLDIR"/>
-        <RemoveFolder Id="RemoveAppMenuDir" On="uninstall"/>
-        <RegistryValue Root="HKCU" Key="Software\Kovert" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
-      </Component>
-    </DirectoryRef>
-
-    <!-- DESKTOP -->
-    <DirectoryRef Id="DesktopFolder">
-      <Component Id="DesktopShortcut" Guid="*">
-        <Shortcut Id="DesktopShortcutId"
-                  Name="Kovert"
-                  Target="[INSTALLDIR]Kovert.exe"
-                  WorkingDirectory="INSTALLDIR"/>
-        <RegistryValue Root="HKCU" Key="Software\Kovert" Name="desktop" Type="integer" Value="1" KeyPath="yes"/>
-      </Component>
-    </DirectoryRef>
-
-    <!-- 🔥 CHECKBOX PROPERTY -->
-    <Property Id="ADD_TO_PATH" Value="1"/>
-
-    <!-- ========================= -->
-    <!-- 🔥 CUSTOM INSTALL UI -->
-    <!-- ========================= -->
-    <UI>
-
-      <UIRef Id="WixUI_Common"/>
-
-      <Dialog Id="CustomInstallDirDlg" Width="370" Height="270" Title="Kovert Setup">
-
-        <Control Id="Title" Type="Text" X="15" Y="10" Width="340" Height="20"
-                 Transparent="yes" NoPrefix="yes"
-                 Text="Choose Install Location"/>
-
-        <Control Id="FolderLabel" Type="Text" X="20" Y="60" Width="290" Height="15"
-                 Text="Install Kovert to:"/>
-
-        <Control Id="Folder" Type="PathEdit" X="20" Y="80" Width="290" Height="18"
-                 Property="INSTALLDIR"/>
-
-        <Control Id="Browse" Type="PushButton" X="310" Y="80" Width="50" Height="18"
-                 Text="Browse">
-          <Publish Event="SpawnDialog" Value="BrowseDlg">1</Publish>
-        </Control>
-
-        <!-- 🔥 REAL CHECKBOX -->
-        <Control Id="AddToPathCheckbox"
-                 Type="CheckBox"
-                 X="20"
-                 Y="120"
-                 Width="300"
-                 Height="18"
-                 Property="ADD_TO_PATH"
-                 CheckBoxValue="1"
-                 Text="Add Kovert CLI to system PATH (recommended)"/>
-
-        <!-- NAVIGATION -->
-        <Control Id="Back" Type="PushButton" X="180" Y="240" Width="56" Height="17" Text="Back">
-          <Publish Event="NewDialog" Value="WelcomeDlg">1</Publish>
-        </Control>
-
-        <Control Id="Next" Type="PushButton" X="236" Y="240" Width="56" Height="17" Default="yes" Text="Next">
-          <Publish Event="SetTargetPath" Value="[INSTALLDIR]">1</Publish>
-          <Publish Event="NewDialog" Value="VerifyReadyDlg">1</Publish>
-        </Control>
-
-        <Control Id="Cancel" Type="PushButton" X="304" Y="240" Width="56" Height="17" Cancel="yes" Text="Cancel">
-          <Publish Event="SpawnDialog" Value="CancelDlg">1</Publish>
-        </Control>
-
-      </Dialog>
-
-      <InstallUISequence>
-        <Show Dialog="CustomInstallDirDlg" After="WelcomeDlg"/>
-      </InstallUISequence>
-
-    </UI>
-
-    <!-- 🔥 BRANDING -->
+    <UIRef Id="WixUI_InstallDir"/>
+    <UIRef Id="WixUI_ErrorProgressText"/>
+    
+    <WixVariable Id="WixUILicenseRtf" Value="assets\license.rtf" />
     <WixVariable Id="WixUIBannerBmp" Value="assets\banner.bmp"/>
     <WixVariable Id="WixUIDialogBmp" Value="assets\dialog.bmp"/>
 
-    <!-- 🔥 PATH HANDLING -->
-    <DirectoryRef Id="INSTALLDIR">
-      <Component Id="EnvPathComponent" Guid="*">
-        <Condition>ADD_TO_PATH = 1</Condition>
+    <UI>
+      <Dialog Id="OptionsDlg" Width="370" Height="270" Title="Kovert Setup">
+        <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="!(loc.InstallDirDlgBannerBitmap)" />
+        <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="0" />
+        <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
 
-        <Environment Id="AddKovertToPath"
-                     Name="PATH"
-                     Value="[INSTALLDIR]"
-                     Permanent="no"
-                     Part="last"
-                     Action="set"
-                     System="yes"/>
-        
-        <!-- KEYPATH FIX -->
-        <RegistryValue Root="HKCU"
-                       Key="Software\Kovert"
-                       Name="PathAdded"
-                       Type="integer"
-                       Value="1"
-                       KeyPath="yes"/>
-      </Component>
-    </DirectoryRef>
+        <Control Id="Title" Type="Text" X="15" Y="6" Width="200" Height="15" Transparent="yes" NoPrefix="yes" Text="{\WixUI_Font_Title}Install Options"/>
+        <Control Id="Description" Type="Text" X="25" Y="23" Width="280" Height="15" Transparent="yes" NoPrefix="yes" Text="Choose additional features for Kovert." />
+
+        <Control Id="AddToPathCheckbox" Type="CheckBox" X="25" Y="80" Width="300" Height="18" 
+                 Property="ADD_TO_PATH" CheckBoxValue="1" 
+                 Text="Add Kovert CLI to PATH (recommended)"/>
+
+        <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="Next">
+          <Publish Event="NewDialog" Value="VerifyReadyDlg">1</Publish>
+        </Control>
+        <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="Back">
+          <Publish Event="NewDialog" Value="InstallDirDlg">1</Publish>
+        </Control>
+        <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="Cancel">
+          <Publish Event="SpawnDialog" Value="CancelDlg">1</Publish>
+        </Control>
+      </Dialog>
+
+      <Publish Dialog="InstallDirDlg" Control="Next" Event="NewDialog" Value="OptionsDlg" Order="5">1</Publish>
+      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="OptionsDlg" Order="5">NOT Installed</Publish>
+    </UI>
 
   </Product>
-
 </Wix>

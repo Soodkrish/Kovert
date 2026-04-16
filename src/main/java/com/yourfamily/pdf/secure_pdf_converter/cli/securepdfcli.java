@@ -1,6 +1,8 @@
 package com.yourfamily.pdf.secure_pdf_converter.cli;
 
 import java.io.File;
+import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,7 +14,15 @@ import com.yourfamily.pdf.secure_pdf_converter.core.tools.ToolHealthChecker;
 
 public final class securepdfcli {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws UnsupportedEncodingException {
+    	
+    	if (System.getProperty("os.name").toLowerCase().contains("win")) {
+            try {
+                new ProcessBuilder("cmd", "/c", "chcp 65001 > nul").inheritIO().start().waitFor();
+            } catch (Exception ignored) {}
+        }
+    	
+    	System.setOut(new PrintStream(System.out, true, "UTF-8"));
 
         if (args.length < 1) {
             printHelp();
@@ -335,21 +345,21 @@ public final class securepdfcli {
 		⣿⣿⡿⡅⠄⠄⢀⡰⠂⣼⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
 
 
-  Secure PDF Converter
+  Secure PDF Converter 
   Local-first private document conversion
   =======================================
 
 Usage:
-  securepdf convert --input <file>
-  securepdf convert --input <file> --output <file>
-  securepdf convert --input <file> --to <format>
-  securepdf convert --input <file> --from <format> --to <format>
-  securepdf convert --batch <folder>
-  securepdf list
+  kovertcli convert --input <file>
+  kovertcli convert --input <file> --output <file>
+  kovertcli convert --input <file> --to <format>
+  kovertcli convert --input <file> --from <format> --to <format>
+  kovertcli convert --batch <folder>
+  kovertcli list
 
 Default behavior:
   Picks a preferred target automatically when --to is omitted.
-  Use `securepdf list` or `securepdf convert --list` to see every route.
+  Use `kovertcli  list` or `kovertcli  convert --list` to see every route.
 
 --from and --to are optional.
 If omitted, format is auto-detected.
