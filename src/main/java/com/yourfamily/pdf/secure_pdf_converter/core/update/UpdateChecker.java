@@ -21,7 +21,7 @@ import java.util.Properties;
         private static final String CURRENT_VERSION = "1.0.0";
 
         private static final String VERSION_URL =
-                "https://raw.githubusercontent.com/Soodkrish/Kovert/main/main/version.txt";
+                "https://raw.githubusercontent.com/Soodkrish/Kovert/main/version.txt";
 
         private static final String DOWNLOAD_URL =
                 "https://github.com/Soodkrish/Kovert";
