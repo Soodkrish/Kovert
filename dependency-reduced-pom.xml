@@ -4,7 +4,7 @@
   <groupId>com.yourfamily.pdf</groupId>
   <artifactId>secure-pdf-converter</artifactId>
   <name>secure-pdf-converter</name>
-  <version>1.0.0-SNAPSHOT</version>
+  <version>1.0.1-SNAPSHOT</version>
   <url>http://maven.apache.org</url>
   <build>
     <finalName>app</finalName>
