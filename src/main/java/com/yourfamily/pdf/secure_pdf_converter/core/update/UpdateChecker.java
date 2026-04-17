@@ -18,7 +18,7 @@ import java.util.Properties;
     public final class UpdateChecker {
 
         // 🔥 Current version of the installed app
-        private static final String CURRENT_VERSION = "1.0.0";
+        private static final String CURRENT_VERSION = "1.0.1";
 
         private static final String VERSION_URL =
                 "https://raw.githubusercontent.com/Soodkrish/Kovert/main/version.txt";

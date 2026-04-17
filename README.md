@@ -6,7 +6,7 @@
 
 Convert PDFs, Office documents, images, HTML, Markdown, and text files through a polished JavaFX desktop experience with smart multi-step routing, batch processing, per-file output control, and local-only execution.
 
-![Version](https://img.shields.io/badge/version-1.0.0--SNAPSHOT-2563eb?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-1.0.0-2563eb?style=for-the-badge)
 ![Java](https://img.shields.io/badge/Java-23-e11d48?style=for-the-badge)
 ![JavaFX](https://img.shields.io/badge/JavaFX-23-0ea5e9?style=for-the-badge)
 ![Maven](https://img.shields.io/badge/Build-Maven-22c55e?style=for-the-badge)
@@ -20,6 +20,7 @@ Convert PDFs, Office documents, images, HTML, Markdown, and text files through a
 
 - [Overview](#overview)
 - [Why Kovert](#why-kovert)
+- [Github Releases](#-download)
 - [Screenshots](#screenshots)
 - [Core Features](#core-features)
 - [Supported Formats](#supported-formats)
@@ -30,7 +31,6 @@ Convert PDFs, Office documents, images, HTML, Markdown, and text files through a
 - [Installation](#installation)
 - [Running the App](#running-the-app)
 - [CLI Usage](#cli-usage)
-- [Release Artifacts and Versioning](#release-artifacts-and-versioning)
 - [Project Structure](#project-structure)
 - [Security and Privacy](#security-and-privacy)
 - [Troubleshooting](#troubleshooting)
@@ -45,7 +45,9 @@ Convert PDFs, Office documents, images, HTML, Markdown, and text files through a
 
 ## Overview
 
-Kovert, also known as **Secure PDF Converter**, is a JavaFX desktop application for converting files between multiple document, image, web, and text formats. It is built for users who need a fast local tool that can process private files without relying on cloud upload services.
+Kovert is a local-first JavaFX desktop application for smart document conversion and OCR-powered and manual PDF redaction across documents, images, web, and text formats. It is built for users who need a fast local tool that can process private files without relying on cloud upload services.
+
+** Built and Inspired specifically for the CIA or FBI so that they can redact the fucking doc properly**
 
 The application supports single-file conversion, multi-file queues, folder-based batch conversion, drag-and-drop upload, per-file output format selection, and progress feedback while conversions run in the background.
 
@@ -66,10 +68,17 @@ Kovert is not limited to direct format pairs. Its conversion engine can resolve 
 | Extensible core | New converters can be added by registering route handlers in `ConversionRouter`. |
 
 ---
+### GitHub Releases
+
+## 💻 Download
+
+<p align="center">
+  <a href="https://github.com/Soodkrish/Kovert/releases/latest">
+    <img src="https://img.shields.io/badge/Download-Windows%20Installer-2563eb?style=for-the-badge&logo=windows&logoColor=white"/>
+  </a>
+</p>
 
 ## Screenshots
-
-> Add production screenshots to `docs/screenshots/` and keep these paths stable for GitHub.
 
 | Landing | Conversion Workspace |
 | --- | --- |
@@ -94,6 +103,26 @@ Kovert is not limited to direct format pairs. Its conversion engine can resolve 
 - Route complex conversions through automatically discovered intermediate steps.
 - Generate output files in a user-selected destination folder.
 - Skip same-format conversions instead of overwriting files unnecessarily.
+
+### 🛡 PDF Redaction (Core Feature)
+
+Kovert includes a full PDF redaction workspace designed for sensitive document workflows.
+
+#### ✍️ Manual Redaction
+- Draw boxes, ellipses, and free-form brush paths
+- Preview redactions before applying
+- Precise region-based editing
+
+#### 🔍 OCR-Powered Word Detection
+- Scan PDFs using Tesseract OCR
+- Detect and highlight text automatically
+- Redact repeated words across the document
+
+#### 📄 Safe Output
+- Exports a new redacted PDF
+- Original file remains untouched
+
+> Built with `PrecisionRedactionEngine` + OCR-assisted detection
 
 ### Per-File Conversion Selection
 
@@ -303,8 +332,8 @@ External engines are wrapped behind bridge classes so the rest of the app does n
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/<your-username>/secure-pdf-converter.git
-cd secure-pdf-converter
+git clone https://github.com/Soodkrish/Kovert.git
+cd Kovert
 ```
 
 ### 2. Verify Java and Maven
@@ -380,40 +409,19 @@ dist/Kovert/Kovert.exe
 
 Kovert also includes a CLI entry point for conversion automation.
 
-### Windows packaged CLI
-
-```powershell
-dist\Kovert\kovertcli.exe list
-dist\Kovert\kovertcli.exe convert --input "sample.pdf" --to docx --output "sample.docx"
-dist\Kovert\kovertcli.exe convert --batch "C:\Documents" --to pdf --output "C:\Converted"
-```
 
 ### Supported CLI commands
 
 ```text
-securepdf list
-securepdf convert --input <file>
-securepdf convert --input <file> --output <file>
-securepdf convert --input <file> --from <format> --to <format>
-securepdf convert --batch <folder>
-securepdf convert --list
+kovertcli list
+kovertcli convert --input <file>
+kovertcli convert --input <file> --output <file>
+kovertcli convert --input <file> --from <format> --to <format>
+kovertcli convert --batch <folder>
+kovertcli convert --list
 ```
 
 ---
-
-## Release Artifacts and Versioning
-
-Current project version:
-
-```text
-1.0.0-SNAPSHOT
-```
-
-The version is defined in:
-
-```text
-pom.xml
-```
 
 ### Local Build Output
 
@@ -425,113 +433,6 @@ pom.xml
 | CLI executable | `dist/Kovert/kovertcli.exe` | Windows CLI launcher |
 | Runtime image | `dist/Kovert/runtime/` | Bundled Java runtime for desktop distribution |
 | App payload | `dist/Kovert/app/` | JARs, classes, config, and runtime app files |
-
-### GitHub Releases
-
-Recommended GitHub release format:
-
-| Release tag | Version | Artifact name | Notes |
-| --- | --- | --- | --- |
-| `v1.0.0-alpha` | `1.0.0-SNAPSHOT` | `Kovert-v1.0.0-alpha-windows-x64.zip` | First public preview build |
-| `v1.0.0` | `1.0.0` | `Kovert-v1.0.0-windows-x64.zip` | First stable desktop release |
-| `v1.0.1` | `1.0.1` | `Kovert-v1.0.1-windows-x64.zip` | Patch release |
-| `v1.1.0` | `1.1.0` | `Kovert-v1.1.0-windows-x64.zip` | New feature release |
-
-Recommended release package contents:
-
-```text
-Kovert-v1.0.0-windows-x64.zip
-  Kovert/
-    Kovert.exe
-    kovertcli.exe
-    app/
-    runtime/
-    tools/
-```
-
-### Versioning Policy
-
-Kovert should follow semantic versioning:
-
-```text
-MAJOR.MINOR.PATCH
-```
-
-- `MAJOR` changes for breaking workflow, packaging, or API changes.
-- `MINOR` changes for new formats, new UI workflows, or new tools.
-- `PATCH` changes for bug fixes, stability improvements, and conversion fixes.
-- `SNAPSHOT` means active development and should not be treated as a stable release.
-
-### Release Checklist
-
-- Update `pom.xml` version.
-- Run `mvn clean package`.
-- Validate `target/app.jar`.
-- Validate `dist/Kovert/Kovert.exe`.
-- Validate `dist/Kovert/kovertcli.exe`.
-- Confirm external tools are bundled or documented.
-- Zip `dist/Kovert/` with the release version in the file name.
-- Create a GitHub Release with the matching tag.
-- Attach the zipped release artifact.
-- Add screenshots and release notes.
-
----
-
-## Project Structure
-
-```text
-secure-pdf-converter/
-  pom.xml
-  README.md
-  icon.ico
-  src/
-    main/
-      java/
-        com/yourfamily/pdf/secure_pdf_converter/
-          App.java
-          DocumentLoader.java
-          DocumentValidator.java
-          DocumentFingerprint.java
-          cli/
-            securepdfcli.java
-          core/
-            conversion/
-              ConversionRouter.java
-              ConversionHandler.java
-              *Converter.java
-              imagemagick/
-              libreoffice/
-              pandoc/
-            redaction/
-            tools/
-          ui/
-            MainWindow.java
-            LandingView.java
-            ModeChooserView.java
-            ConversionView.java
-            EditorView.java
-      resources/
-        style.css
-        ui-theme.css
-    test/
-  tools/
-    libreoffice/
-    pandoc/
-    imagemagick/
-    tesseract/
-  target/
-    app.jar
-    original-app.jar
-  dist/
-    Kovert/
-      Kovert.exe
-      kovertcli.exe
-      app/
-      runtime/
-      tools/
-```
-
----
 
 ## Security and Privacy
 
@@ -552,56 +453,6 @@ For sensitive documents, users should still review converted or redacted output 
 ### Tool status is red or orange
 
 Open the tool health popup and verify that each required executable exists under the expected `tools/` path.
-
-### LibreOffice conversions fail
-
-Confirm this file exists:
-
-```text
-tools/libreoffice/program/soffice.exe
-```
-
-Then retry the conversion.
-
-### Pandoc conversions fail
-
-Confirm this file exists:
-
-```text
-tools/pandoc/pandoc.exe
-```
-
-Pandoc-dependent workflows include DOCX, HTML, Markdown, and TXT routes.
-
-### Image conversions fail
-
-Confirm this file exists:
-
-```text
-tools/imagemagick/magick.exe
-```
-
-ImageMagick-dependent workflows include PNG, JPG, WEBP, and SVG-related transformations.
-
-### OCR or redaction scanning fails
-
-Confirm this file exists:
-
-```text
-tools/tesseract/tesseract.exe
-```
-
-OCR-assisted redaction depends on Tesseract through Tess4J.
-
-### Unsupported conversion path
-
-Run the supported conversion list from the CLI:
-
-```powershell
-dist\Kovert\kovertcli.exe list
-```
-
-Or check the supported formats table in this README.
 
 ---
 
@@ -715,6 +566,4 @@ Kovert demonstrates practical desktop engineering across several important areas
 
 ## License
 
-This repository does not currently include a published license file.
-
-Before public distribution or external contribution intake, add a `LICENSE` file and update this section with the selected license terms.
+i don't know mate -- if you want to censor doujins go for it dude but tell me some suggestions if possible
