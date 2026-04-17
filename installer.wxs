@@ -4,7 +4,7 @@
   <Product Id="*"
            Name="Kovert"
            Language="1033"
-           Version="1.0.0"
+           Version="1.0.1"
            Manufacturer="Kovert Inc."
            UpgradeCode="71460A28-C58F-438D-809D-41A241ABEBB7"> <Package InstallerVersion="500" 
              Compressed="yes" 
