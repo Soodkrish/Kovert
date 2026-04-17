@@ -8,6 +8,7 @@ import java.util.*;
 
 import com.yourfamily.pdf.secure_pdf_converter.LoadedDocument;
 import com.yourfamily.pdf.secure_pdf_converter.core.redaction.RedactionPlan;
+import com.yourfamily.pdf.secure_pdf_converter.core.tools.TesseractFactory;
 
 public class TesseractWordEngine {
 
@@ -23,10 +24,7 @@ public class TesseractWordEngine {
 
         PDFRenderer renderer = new PDFRenderer(doc.forRenderingOnly());
 
-        ITesseract tesseract = new Tesseract();
-
-        // 🔥 IMPORTANT — CHANGE THIS PATH
-        tesseract.setDatapath("C:/Users/soodk/AppData/Local/Programs/Tesseract-OCR/tessdata");
+        ITesseract tesseract = TesseractFactory.create();
 
         int pageCount = doc.forRenderingOnly().getNumberOfPages();
 

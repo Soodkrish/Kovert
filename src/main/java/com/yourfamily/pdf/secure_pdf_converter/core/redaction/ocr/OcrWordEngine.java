@@ -9,21 +9,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.yourfamily.pdf.secure_pdf_converter.core.tools.AppPaths;
+import com.yourfamily.pdf.secure_pdf_converter.core.tools.TesseractFactory;
 
 public class OcrWordEngine {
 
     private final ITesseract tesseract;
 
     public OcrWordEngine() {
-        tesseract = new Tesseract();
-
-        // 🔥 SET YOUR tessdata path
-        tesseract.setDatapath(
-        		new File(AppPaths.toolsDir(), "tesseract/tessdata").getAbsolutePath()
-        	);
-
-        // optional (better accuracy)
-        tesseract.setLanguage("eng");
+        tesseract = TesseractFactory.create();
     }
 
     public List<OcrWord> extractWords(BufferedImage image) throws Exception {
