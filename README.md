@@ -2,11 +2,9 @@
 
 # Kovert
 
-### Secure PDF Converter for Local-First Document Workflows
+### Secure PDF Converter and Redaction tool for Local-First Document Workflows
 
-Convert PDFs, Office documents, images, HTML, Markdown, and text files through a polished JavaFX desktop experience with smart multi-step routing, batch processing, per-file output control, and local-only execution.
-
-![Version](https://img.shields.io/badge/version-1.0.0-2563eb?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-1.0.1-2563eb?style=for-the-badge)
 ![Java](https://img.shields.io/badge/Java-23-e11d48?style=for-the-badge)
 ![JavaFX](https://img.shields.io/badge/JavaFX-23-0ea5e9?style=for-the-badge)
 ![Maven](https://img.shields.io/badge/Build-Maven-22c55e?style=for-the-badge)
@@ -80,17 +78,17 @@ Kovert is not limited to direct format pairs. Its conversion engine can resolve 
 
 ## Screenshots
 
-| Landing | Conversion Workspace |
+| Landing | ModeViewer |
 | --- | --- |
-| ![Kovert landing screen](docs/screenshots/kovert-landing.png) | ![Kovert conversion workspace](docs/screenshots/conversion-workspace.png) |
+| ![Kovert landing screen](assets/ss/landing.png) | ![ModeViewer](assets/ss/modeviewer.png) |
 
-| Per-File Mode | Tool Health Check |
+| Tool Health Check |
 | --- | --- |
-| ![Per-file conversion selection](docs/screenshots/per-file-selection.png) | ![External tools health check](docs/screenshots/tool-health-check.png) |
+| ![External tools health check](assets/ss/externaltools.png) |
 
-| PDF Redaction Workspace | Batch Conversion |
+| PDF Redaction Workspace | Conversion Workspace
 | --- | --- |
-| ![PDF redaction workspace](docs/screenshots/redaction-workspace.png) | ![Batch conversion queue](docs/screenshots/batch-conversion.png) |
+| ![PDF redaction workspace](assets/ss/redactionview.png) | ![Kovert conversion workspace](assets/ss/conversionview.png) |
 
 ---
 
